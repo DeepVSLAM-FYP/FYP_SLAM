@@ -35,6 +35,7 @@ Thirdparty/**/*.dylib
 Thirdparty/**/*.dll
 
 Examples/
+Trajectories/
 
 # General build artifacts in any directory
 **/build/
