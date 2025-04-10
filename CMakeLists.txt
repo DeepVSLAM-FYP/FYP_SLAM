@@ -18,7 +18,7 @@ set(PROJECT_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Option to build specific SLAM system
 option(BUILD_ORBSLAM3 "Build ORB-SLAM3" ON)
-option(BUILD_XFEATSLAM "Build XFeatSLAM" ON)
+option(BUILD_XFEATSLAM "Build XFeatSLAM" OFF)
 
 # Add ORBSLAM3 if enabled
 if(BUILD_ORBSLAM3)

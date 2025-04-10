@@ -11,34 +11,6 @@
 				"kind": "build",
 				"isDefault": true
 			}
-		},
-		{
-			"type": "cmake",
-			"label": "CMake: clean rebuild",
-			"command": "cleanRebuild",
-			"targets": [
-				"monoORB_euroc"
-			],
-			"options": {
-				"jobs": "max" // Use all available cores
-			},
-			"group": "build",
-			"problemMatcher": [],
-			"detail": "CMake template clean rebuild task"
-		},
-		{
-			"type": "cmake",
-			"label": "CMake: build",
-			"command": "build",
-			"targets": [
-				"monoORB_euroc"
-			],
-			"options": {
-				"jobs": "max" // Use all available cores
-			},
-			"group": "build",
-			"problemMatcher": [],
-			"detail": "CMake template build task"
 		}
 	]
 }

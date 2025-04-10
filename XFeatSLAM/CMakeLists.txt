@@ -70,84 +70,173 @@ include_directories(
     ${PROJECT_ROOT_DIR}/Thirdparty/Sophus/
 )
 
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_ROOT_DIR}/lib)
+# Set output directory for libraries
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_ROOT_DIR}/lib/XF)
 
-add_library(${PROJECT_NAME} SHARED
-    src/System.cc
-    src/Tracking.cc
-    src/LocalMapping.cc
-    src/LoopClosing.cc
-    src/ORBextractor.cc
-    src/ORBmatcher.cc
-    src/FrameDrawer.cc
-    src/Converter.cc
-    src/MapPoint.cc
-    src/KeyFrame.cc
-    src/Atlas.cc
-    src/Map.cc
-    src/MapDrawer.cc
-    src/Optimizer.cc
-    src/Frame.cc
-    src/KeyFrameDatabase.cc
-    src/Sim3Solver.cc
-    src/Viewer.cc
-    src/ImuTypes.cc
-    src/G2oTypes.cc
-    src/CameraModels/Pinhole.cpp
-    src/CameraModels/KannalaBrandt8.cpp
-    src/OptimizableTypes.cpp
-    src/MLPnPsolver.cpp
-    src/GeometricTools.cc
-    src/TwoViewReconstruction.cc
-    src/Config.cc
-    src/Settings.cc
-    src/XFeat.cc
-    src/XFextractor.cc
-
-    include/System.h
-    include/Tracking.h
-    include/LocalMapping.h
-    include/LoopClosing.h
-    include/ORBextractor.h
-    include/ORBmatcher.h
-    include/FrameDrawer.h
-    include/Converter.h
-    include/MapPoint.h
-    include/KeyFrame.h
-    include/Atlas.h
-    include/Map.h
-    include/MapDrawer.h
-    include/Optimizer.h
-    include/Frame.h
-    include/KeyFrameDatabase.h
-    include/Sim3Solver.h
-    include/Viewer.h
-    include/ImuTypes.h
-    include/G2oTypes.h
-    include/CameraModels/GeometricCamera.h
-    include/CameraModels/Pinhole.h
-    include/CameraModels/KannalaBrandt8.h
-    include/OptimizableTypes.h
-    include/MLPnPsolver.h
-    include/GeometricTools.h
-    include/TwoViewReconstruction.h
-    include/SerializationUtils.h
-    include/Config.h
-    include/Settings.h
-    include/XFeat.h
-    include/XFextractor.h
-)
-
-target_link_libraries(${PROJECT_NAME}
+# Define common libraries that every module will link against
+set(COMMON_LIBRARIES
     ${OpenCV_LIBS}
     ${Pangolin_LIBRARIES}
     ${TORCH_LIBRARIES}
     ${EIGEN3_LIBS}
-
     ${PROJECT_ROOT_DIR}/Thirdparty/libs/lib/libDBoW2.so
     ${PROJECT_ROOT_DIR}/Thirdparty/libs/lib/libg2o.so
     -lboost_serialization
     -lcrypto
+)
+
+# 1. Core Module
+add_library(xfeatslam_core SHARED
+    src/System.cc
+    src/Config.cc
+    src/Settings.cc
+    include/System.h
+    include/Config.h
+    include/Settings.h
+)
+target_link_libraries(xfeatslam_core ${COMMON_LIBRARIES})
+
+# 2. Tracking Module
+add_library(xfeatslam_tracking SHARED
+    src/Tracking.cc
+    src/Frame.cc
+    include/Tracking.h
+    include/Frame.h
+)
+target_link_libraries(xfeatslam_tracking 
+    xfeatslam_core
+    xfeatslam_features
+    ${COMMON_LIBRARIES}
+)
+
+# 3. Mapping Module
+add_library(xfeatslam_mapping SHARED
+    src/LocalMapping.cc
+    src/LoopClosing.cc
+    include/LocalMapping.h
+    include/LoopClosing.h
+)
+target_link_libraries(xfeatslam_mapping 
+    xfeatslam_core
+    xfeatslam_map
+    xfeatslam_optimizer
+    ${COMMON_LIBRARIES}
+)
+
+# 4. Map Data Module
+add_library(xfeatslam_map SHARED
+    src/Map.cc
+    src/Atlas.cc
+    src/MapPoint.cc
+    src/KeyFrame.cc
+    src/KeyFrameDatabase.cc
+    include/Map.h
+    include/Atlas.h
+    include/MapPoint.h
+    include/KeyFrame.h
+    include/KeyFrameDatabase.h
+)
+target_link_libraries(xfeatslam_map 
+    xfeatslam_core
+    ${COMMON_LIBRARIES}
+)
+
+# 5. Feature Module
+add_library(xfeatslam_features SHARED
+    src/ORBextractor.cc
+    src/ORBmatcher.cc
+    src/XFeat.cc
+    src/XFextractor.cc
+    include/ORBextractor.h
+    include/ORBmatcher.h
+    include/ORBVocabulary.h
+    include/XFeat.h
+    include/XFextractor.h
+)
+target_link_libraries(xfeatslam_features 
+    xfeatslam_core
+    ${COMMON_LIBRARIES}
+)
+
+# 6. Optimization Module
+add_library(xfeatslam_optimizer SHARED
+    src/Optimizer.cc
+    src/G2oTypes.cc
+    src/OptimizableTypes.cpp
+    src/Sim3Solver.cc
+    src/MLPnPsolver.cpp
+    include/Optimizer.h
+    include/G2oTypes.h
+    include/OptimizableTypes.h
+    include/Sim3Solver.h
+    include/MLPnPsolver.h
+)
+target_link_libraries(xfeatslam_optimizer 
+    xfeatslam_core
+    xfeatslam_map
+    ${COMMON_LIBRARIES}
+)
+
+# 7. Camera Models Module
+add_library(xfeatslam_cameras SHARED
+    src/CameraModels/Pinhole.cpp
+    src/CameraModels/KannalaBrandt8.cpp
+    include/CameraModels/GeometricCamera.h
+    include/CameraModels/Pinhole.h
+    include/CameraModels/KannalaBrandt8.h
+)
+target_link_libraries(xfeatslam_cameras 
+    xfeatslam_core
+    ${COMMON_LIBRARIES}
+)
+
+# 8. Visualization Module
+add_library(xfeatslam_visualization SHARED
+    src/FrameDrawer.cc
+    src/MapDrawer.cc
+    src/Viewer.cc
+    include/FrameDrawer.h
+    include/MapDrawer.h
+    include/Viewer.h
+)
+target_link_libraries(xfeatslam_visualization 
+    xfeatslam_core
+    xfeatslam_map
+    ${COMMON_LIBRARIES}
+)
+
+# 9. Utilities Module
+add_library(xfeatslam_utils SHARED
+    src/Converter.cc
+    src/GeometricTools.cc
+    src/TwoViewReconstruction.cc
+    src/ImuTypes.cc
+    include/Converter.h
+    include/GeometricTools.h
+    include/TwoViewReconstruction.h
+    include/ImuTypes.h
+    include/SerializationUtils.h
+)
+target_link_libraries(xfeatslam_utils 
+    xfeatslam_core
+    ${COMMON_LIBRARIES}
+)
+
+# Main XFeatSLAM meta-library that links all modules together
+add_library(${PROJECT_NAME} SHARED
+    # Just a thin wrapper to link all modules
+    src/System.cc
+)
+target_link_libraries(${PROJECT_NAME}
+    xfeatslam_core
+    xfeatslam_tracking
+    xfeatslam_mapping
+    xfeatslam_map
+    xfeatslam_features
+    xfeatslam_optimizer
+    xfeatslam_cameras
+    xfeatslam_visualization
+    xfeatslam_utils
 )
 
 # ########## Build Examples ###########
@@ -159,8 +248,6 @@ add_executable(rgbd_tum examples/RGB-D/rgbd_tum.cc)
 target_link_libraries(rgbd_tum ${PROJECT_NAME})
 
 # Monocular examples
-# set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/examples/Monocular)
-
 add_executable(mono_tum
     examples/Monocular/mono_tum.cc)
 target_link_libraries(mono_tum ${PROJECT_NAME})
@@ -176,3 +263,6 @@ target_link_libraries(mono_euroc ${PROJECT_NAME})
 add_executable(mono_tum_vi
     examples/Monocular/mono_tum_vi.cc)
 target_link_libraries(mono_tum_vi ${PROJECT_NAME})
+
+message(STATUS "XFeatSLAM has been modularized into smaller shared objects")
+message(STATUS "Libraries will be built in: ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
