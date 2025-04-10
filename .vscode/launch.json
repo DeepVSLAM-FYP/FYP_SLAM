@@ -13,7 +13,8 @@
                 "${workspaceFolder}/Vocabulary/ORBvoc.txt",
                 "${workspaceFolder}/ORBSLAM3/Examples/Monocular/EuRoC.yaml",
                 "${workspaceFolder}/datasets/MH01",
-                "${workspaceFolder}/ORBSLAM3/Examples/Monocular/EuRoC_TimeStamps/MH01.txt"
+                "${workspaceFolder}/ORBSLAM3/Examples/Monocular/EuRoC_TimeStamps/MH01.txt",
+                "${workspaceFolder}/Trajectories/ORB/MH01/"
             ],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
