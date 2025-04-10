@@ -17,8 +17,8 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=native")
 set(PROJECT_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Option to build specific SLAM system
-option(BUILD_ORBSLAM3 "Build ORB-SLAM3" ON)
-option(BUILD_XFEATSLAM "Build XFeatSLAM" OFF)
+option(BUILD_ORBSLAM3 "Build ORB-SLAM3" OFF)
+option(BUILD_XFEATSLAM "Build XFeatSLAM" ON)
 
 # Add ORBSLAM3 if enabled
 if(BUILD_ORBSLAM3)
