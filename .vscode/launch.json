@@ -39,7 +39,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/Examples/XF/mono_euroc",
             "args": [
-                "${workspaceFolder}/XFeatSLAM/Vocabulary/ORBvoc.txt",
+                "${workspaceFolder}/Vocabulary/ORBvoc.txt",
                 "${workspaceFolder}/XFeatSLAM/examples/Monocular/EuRoC.yaml",
                 "${workspaceFolder}/datasets/MH01",
                 "${workspaceFolder}/XFeatSLAM/examples/Monocular/EuRoC_TimeStamps/MH01.txt"
