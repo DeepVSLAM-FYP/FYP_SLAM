@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 project(ORB_SLAM3)
 
-
 IF(NOT CMAKE_BUILD_TYPE)
   SET(CMAKE_BUILD_TYPE Debug)
 ENDIF()
@@ -52,7 +51,6 @@ set(Pangolin_DIR "${PROJECT_ROOT_DIR}/Thirdparty/libs/lib/cmake/Pangolin")
 find_package(Pangolin 0.6 REQUIRED)
 message("PANGOLIN VERSION: " ${Pangolin_VERSION} " found in " ${Pangolin_INCLUDE_DIRS})
 
-
 include_directories(
         ${PROJECT_ROOT_DIR}
         ${PROJECT_SOURCE_DIR}
@@ -63,79 +61,171 @@ include_directories(
         ${Pangolin_INCLUDE_DIRS}
 )
 
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_ROOT_DIR}/lib)
+# Set output directory for libraries
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_ROOT_DIR}/lib/ORB)
 
-add_library(${PROJECT_NAME} SHARED
-src/System.cc
-src/Tracking.cc
-src/LocalMapping.cc
-src/LoopClosing.cc
-src/ORBextractor.cc
-src/ORBmatcher.cc
-src/FrameDrawer.cc
-src/Converter.cc
-src/MapPoint.cc
-src/KeyFrame.cc
-src/Atlas.cc
-src/Map.cc
-src/MapDrawer.cc
-src/Optimizer.cc
-src/Frame.cc
-src/KeyFrameDatabase.cc
-src/Sim3Solver.cc
-src/Viewer.cc
-src/ImuTypes.cc
-src/G2oTypes.cc
-src/CameraModels/Pinhole.cpp
-src/CameraModels/KannalaBrandt8.cpp
-src/OptimizableTypes.cpp
-src/MLPnPsolver.cpp
-src/GeometricTools.cc
-src/TwoViewReconstruction.cc
-src/Config.cc
-src/Settings.cc
-include/System.h
-include/Tracking.h
-include/LocalMapping.h
-include/LoopClosing.h
-include/ORBextractor.h
-include/ORBmatcher.h
-include/FrameDrawer.h
-include/Converter.h
-include/MapPoint.h
-include/KeyFrame.h
-include/Atlas.h
-include/Map.h
-include/MapDrawer.h
-include/Optimizer.h
-include/Frame.h
-include/KeyFrameDatabase.h
-include/Sim3Solver.h
-include/Viewer.h
-include/ImuTypes.h
-include/G2oTypes.h
-include/CameraModels/GeometricCamera.h
-include/CameraModels/Pinhole.h
-include/CameraModels/KannalaBrandt8.h
-include/OptimizableTypes.h
-include/MLPnPsolver.h
-include/GeometricTools.h
-include/TwoViewReconstruction.h
-include/SerializationUtils.h
-include/Config.h
-include/Settings.h)
-
-target_link_libraries(${PROJECT_NAME}
-${OpenCV_LIBS}
-${EIGEN3_LIBS}
-${Pangolin_LIBRARIES}
-${PROJECT_ROOT_DIR}/Thirdparty/libs/lib/libDBoW2.so
-${PROJECT_ROOT_DIR}/Thirdparty/libs/lib/libg2o.so
--lboost_serialization
--lcrypto
+# Define common libraries that every module will link against
+set(COMMON_LIBRARIES
+    ${OpenCV_LIBS}
+    ${EIGEN3_LIBS}
+    ${Pangolin_LIBRARIES}
+    ${PROJECT_ROOT_DIR}/Thirdparty/libs/lib/libDBoW2.so
+    ${PROJECT_ROOT_DIR}/Thirdparty/libs/lib/libg2o.so
+    -lboost_serialization
+    -lcrypto
 )
 
-# Build examples
+# 1. Core Module
+add_library(orbslam3_core SHARED
+    src/System.cc
+    src/Config.cc
+    src/Settings.cc
+    include/System.h
+    include/Config.h
+    include/Settings.h
+)
+target_link_libraries(orbslam3_core ${COMMON_LIBRARIES})
+
+# 2. Tracking Module
+add_library(orbslam3_tracking SHARED
+    src/Tracking.cc
+    src/Frame.cc
+    include/Tracking.h
+    include/Frame.h
+)
+target_link_libraries(orbslam3_tracking 
+    orbslam3_core
+    orbslam3_features
+    ${COMMON_LIBRARIES}
+)
+
+# 3. Mapping Module
+add_library(orbslam3_mapping SHARED
+    src/LocalMapping.cc
+    src/LoopClosing.cc
+    include/LocalMapping.h
+    include/LoopClosing.h
+)
+target_link_libraries(orbslam3_mapping 
+    orbslam3_core
+    orbslam3_map
+    orbslam3_optimizer
+    ${COMMON_LIBRARIES}
+)
+
+# 4. Map Data Module
+add_library(orbslam3_map SHARED
+    src/Map.cc
+    src/Atlas.cc
+    src/MapPoint.cc
+    src/KeyFrame.cc
+    src/KeyFrameDatabase.cc
+    include/Map.h
+    include/Atlas.h
+    include/MapPoint.h
+    include/KeyFrame.h
+    include/KeyFrameDatabase.h
+)
+target_link_libraries(orbslam3_map 
+    orbslam3_core
+    ${COMMON_LIBRARIES}
+)
+
+# 5. Feature Module
+add_library(orbslam3_features SHARED
+    src/ORBextractor.cc
+    src/ORBmatcher.cc
+    include/ORBextractor.h
+    include/ORBmatcher.h
+    include/ORBVocabulary.h
+)
+target_link_libraries(orbslam3_features 
+    orbslam3_core
+    ${COMMON_LIBRARIES}
+)
+
+# 6. Optimization Module
+add_library(orbslam3_optimizer SHARED
+    src/Optimizer.cc
+    src/G2oTypes.cc
+    src/OptimizableTypes.cpp
+    src/Sim3Solver.cc
+    src/MLPnPsolver.cpp
+    include/Optimizer.h
+    include/G2oTypes.h
+    include/OptimizableTypes.h
+    include/Sim3Solver.h
+    include/MLPnPsolver.h
+)
+target_link_libraries(orbslam3_optimizer 
+    orbslam3_core
+    orbslam3_map
+    ${COMMON_LIBRARIES}
+)
+
+# 7. Camera Models Module
+add_library(orbslam3_cameras SHARED
+    src/CameraModels/Pinhole.cpp
+    src/CameraModels/KannalaBrandt8.cpp
+    include/CameraModels/GeometricCamera.h
+    include/CameraModels/Pinhole.h
+    include/CameraModels/KannalaBrandt8.h
+)
+target_link_libraries(orbslam3_cameras 
+    orbslam3_core
+    ${COMMON_LIBRARIES}
+)
+
+# 8. Visualization Module
+add_library(orbslam3_visualization SHARED
+    src/FrameDrawer.cc
+    src/MapDrawer.cc
+    src/Viewer.cc
+    include/FrameDrawer.h
+    include/MapDrawer.h
+    include/Viewer.h
+)
+target_link_libraries(orbslam3_visualization 
+    orbslam3_core
+    orbslam3_map
+    ${COMMON_LIBRARIES}
+)
+
+# 9. Utilities Module
+add_library(orbslam3_utils SHARED
+    src/Converter.cc
+    src/GeometricTools.cc
+    src/TwoViewReconstruction.cc
+    src/ImuTypes.cc
+    include/Converter.h
+    include/GeometricTools.h
+    include/TwoViewReconstruction.h
+    include/ImuTypes.h
+    include/SerializationUtils.h
+)
+target_link_libraries(orbslam3_utils 
+    orbslam3_core
+    ${COMMON_LIBRARIES}
+)
+
+# Main ORB_SLAM3 meta-library that links all modules together
+add_library(${PROJECT_NAME} SHARED
+    # Just a thin wrapper to link all modules
+    src/System.cc
+)
+target_link_libraries(${PROJECT_NAME}
+    orbslam3_core
+    orbslam3_tracking
+    orbslam3_mapping
+    orbslam3_map
+    orbslam3_features
+    orbslam3_optimizer
+    orbslam3_cameras
+    orbslam3_visualization
+    orbslam3_utils
+)
+
+# Build examples - these link to the main library which includes all modules
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_ROOT_DIR}/Examples/ORB)
 
 add_executable(rgbdORB_tum
@@ -165,3 +255,4 @@ target_link_libraries(monoORB_inertial_euroc ${PROJECT_NAME})
 add_executable(monoORB_inertial_tum_vi
         Examples/Monocular-Inertial/mono_inertial_tum_vi.cc)
 target_link_libraries(monoORB_inertial_tum_vi ${PROJECT_NAME})
+message(STATUS "Libraries will be built in: ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
