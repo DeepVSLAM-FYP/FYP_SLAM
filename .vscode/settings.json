@@ -1,0 +1,7 @@
+{
+    // "cmake.sourceDirectory": "/mnt/sda1/FYP_2024/Ruchith/FYP_SLAM/ORBSLAM3",
+    "cmake.sourceDirectory": "${workspaceFolder}",
+    "files.associations": {
+        "cassert": "cpp"
+    }
+}

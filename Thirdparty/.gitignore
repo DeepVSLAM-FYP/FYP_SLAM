@@ -1,0 +1,35 @@
+# Exclude heavy libraries
+pytorch/
+opencv*/
+
+# Preserve source code but ignore build artifacts
+**/build/
+**/bin/
+**/lib/
+**/*.o
+**/*.so
+**/*.a
+**/*.dylib
+**/*.dll
+
+# Keep source files and CMake configuration
+!**/src/
+!**/include/
+!**/CMakeLists.txt
+!**/cmake/
+
+# Specific exclusions for libraries with large binaries
+libs/bin/
+libs/lib/*.so*
+libs/lib/*.a
+
+# Include essential cmake files
+!libs/lib/cmake/eigen3/
+!libs/lib/cmake/Pangolin/
+!libs/share/eigen3/
+
+# Exclude generated documentation
+**/doc/
+**/docs/
+**/html/
+**/latex/

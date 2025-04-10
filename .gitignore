@@ -1,0 +1,87 @@
+# Build outputs
+build/
+lib/
+*.o
+*.so
+*.a
+*.dylib
+*.dll
+*.exe
+
+# CMake generated files
+CMakeLists.txt.user
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+Testing/
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps
+CMakeUserPresets.json
+
+# Heavy third-party libraries
+Thirdparty/pytorch/
+Thirdparty/opencv*/
+Thirdparty/libs/
+
+# Object and compiled files in all Thirdparty
+Thirdparty/**/build/
+Thirdparty/**/*.o
+Thirdparty/**/*.so
+Thirdparty/**/*.a
+Thirdparty/**/*.dylib
+Thirdparty/**/*.dll
+
+Examples/
+
+# General build artifacts in any directory
+**/build/
+**/.cache/
+**/__pycache__/
+**/*.py[cod]
+**/*.egg-info/
+
+# Editor files
+# .vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Backup files
+backup/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Large data files
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+XFEAT_RUN.txt
+**/data/
+**/dataset*/
+
+# Temp/auto-generated files
+KeyFrameTrajectory.txt
+CameraTrajectory.txt
+kf_*.txt
+f_*.txt
+**/ExecMean.txt
+SessionInfo.txt
+Results_*.txt
+*_Stats.txt
+Table_*
+
+#soft links
+datasets

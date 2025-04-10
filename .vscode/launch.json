@@ -1,0 +1,74 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Mono_EuroC",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/Examples/ORB/monoORB_euroc",
+            "args": [
+                "${workspaceFolder}/Vocabulary/ORBvoc.txt",
+                "${workspaceFolder}/ORBSLAM3/Examples/Monocular/EuRoC.yaml",
+                "${workspaceFolder}/datasets/MH01",
+                "${workspaceFolder}/ORBSLAM3/Examples/Monocular/EuRoC_TimeStamps/MH01.txt"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${fileDirname}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "XFMono_EuroC",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/Examples/XF/mono_euroc",
+            "args": [
+                "${workspaceFolder}/XFeatSLAM/Vocabulary/ORBvoc.txt",
+                "${workspaceFolder}/XFeatSLAM/examples/Monocular/EuRoC.yaml",
+                "${workspaceFolder}/datasets/MH01",
+                "${workspaceFolder}/XFeatSLAM/examples/Monocular/EuRoC_TimeStamps/MH01.txt"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${fileDirname}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Enable pretty-printing for Eigen",
+                    // Option A: Directly source the python file
+                    // "text": "source ${workspaceFolder}/Thirdparty/eigen-3.4.0/debug/gdb/printers.py",
+                    "text": "python import sys; sys.path.insert(0, '${workspaceFolder}/Thirdparty/eigen-3.4.0/debug/gdb'); import printers; printers.register_printers(None)",
+                    "ignoreFailures": true
+                  }
+            ]
+        }
+
+    ]
+}

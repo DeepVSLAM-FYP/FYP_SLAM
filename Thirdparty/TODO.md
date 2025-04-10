@@ -1,0 +1,3 @@
+## Todo
+1. make all libs to install .cmake files to the same dir in the libs folder
+2. remove unwanted files from opencv, Pangolin etc...
