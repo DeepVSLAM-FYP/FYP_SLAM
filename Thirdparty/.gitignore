@@ -1,6 +1,5 @@
 # Exclude heavy libraries
 pytorch/
-opencv*/
 
 # Preserve source code but ignore build artifacts
 **/build/

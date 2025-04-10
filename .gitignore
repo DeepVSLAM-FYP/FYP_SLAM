@@ -24,7 +24,6 @@ CMakeUserPresets.json
 
 # Heavy third-party libraries
 Thirdparty/pytorch/
-Thirdparty/opencv*/
 Thirdparty/libs/
 
 # Object and compiled files in all Thirdparty
