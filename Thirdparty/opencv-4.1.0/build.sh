@@ -9,7 +9,8 @@ mkdir -p build
 cd build
 echo "Building opencv"
 echo "Configuring opencv"
-cmake ..
+cmake -DCMAKE_BUILD_TYPE=Release ..
+
 cmake --build . --target install --parallel
 cd $temp_dir
 echo "opencv installed successfully to {SLAM_ROOT}/ThirdParty/libs"
