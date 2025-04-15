@@ -47,7 +47,57 @@
             ],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
-            "environment": [],
+            "environment": [
+                {
+                    "name": "Matcher_Debug",
+                    "value": "1"
+                }
+            ],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Enable pretty-printing for Eigen",
+                    // Option A: Directly source the python file
+                    // "text": "source ${workspaceFolder}/Thirdparty/eigen-3.4.0/debug/gdb/printers.py",
+                    "text": "python import sys; sys.path.insert(0, '${workspaceFolder}/Thirdparty/eigen-3.4.0/debug/gdb'); import printers; printers.register_printers(None)",
+                    "ignoreFailures": true
+                  }
+            ]
+        },
+        {
+            "name": "XFORBMono_EuroC",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/Examples/XF/mono_euroc",
+            "args": [
+                "${workspaceFolder}/Vocabulary/ORBvoc.txt",
+                "${workspaceFolder}/XFeatSLAM/examples/Monocular/EuRoC.yaml",
+                "${workspaceFolder}/datasets/MH01",
+                "${workspaceFolder}/XFeatSLAM/examples/Monocular/EuRoC_TimeStamps/MH01.txt"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${fileDirname}",
+            "environment": [
+                {
+                    "name": "USE_ORB",
+                    "value": "1"
+                },
+                {
+                    "name": "Matcher_Debug",
+                    "value": "1"
+                }
+            ],
             "externalConsole": false,
             "MIMode": "gdb",
             "setupCommands": [

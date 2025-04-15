@@ -3,9 +3,14 @@
         {
             "name": "Linux",
             "includePath": [
-                "${workspaceFolder}/**",
+                "${workspaceFolder}/XFeatSLAM/include",
                 "${workspaceFolder}/ORBSLAM3/include",
-                "${workspaceFolder}/XFeatSLAM/include"
+                "${workspaceFolder}/Thirdparty",
+                "${workspaceFolder}/Thirdparty/libs/include/opencv4",
+                "${workspaceFolder}/ORBSLAM3/include/CameraModels",
+                "${workspaceFolder}/Thirdparty/DBoW2/DBoW2",
+                "${workspaceFolder}/Thirdparty/libs/include",
+                "${workspaceFolder}/Thirdparty/libs/include/eigen3"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
@@ -15,4 +20,4 @@
         }
     ],
     "version": 4
-} 
+}
