@@ -20,7 +20,7 @@
 #include "ORBmatcher.h"
 
 #include<limits.h>
-
+#include<iostream>
 #include<opencv2/core/core.hpp>
 
 #include "Thirdparty/DBoW2/DBoW2/FeatureVector.h"
@@ -49,6 +49,18 @@ namespace ORB_SLAM3
     }
 //Auxillary Functions
     
+    /**
+     * @brief Computes the three most populated bins in a rotation histogram
+     * 
+     * @param histo Array of histogram bins (vectors of indices)
+     * @param L Number of bins in the histogram
+     * @param ind1 Output: Index of the most populated bin
+     * @param ind2 Output: Index of the second most populated bin
+     * @param ind3 Output: Index of the third most populated bin
+     * 
+     * Used for orientation consistency check in matching. Bins that are less than 10% 
+     * of the largest bin are ignored by setting their indices to -1.
+     */
     void ORBmatcher::ComputeThreeMaxima(vector<int>* histo, const int L, int &ind1, int &ind2, int &ind3)
     {
         int max1=0;
@@ -92,8 +104,16 @@ namespace ORB_SLAM3
         }
     }
 
-    // Bit set count for ORB operation from
-    // http://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetParallel
+    /**
+     * @brief Computes distance between two descriptors
+     * 
+     * @param a First descriptor
+     * @param b Second descriptor
+     * @return int Distance value (lower is more similar)
+     * 
+     * Uses L2 norm for XFEAT features (when USE_ORB is not set) or
+     * Hamming distance for ORB features (when USE_ORB is set).
+     */
     int ORBmatcher::DescriptorDistance(const cv::Mat &a, const cv::Mat &b)
     {
         if (std::getenv("USE_ORB") == nullptr)
@@ -120,74 +140,39 @@ namespace ORB_SLAM3
         }
     }
 
+    /**
+     * @brief Determines search radius based on viewing angle
+     * 
+     * @param viewCos Cosine of viewing angle
+     * @return float Search radius multiplier
+     * 
+     * Returns a smaller radius for more head-on views (cosine close to 1),
+     * and a larger radius for more oblique viewing angles.
+     */
+    float ORBmatcher::RadiusByViewingCos(const float &viewCos)
+    {
+        if(viewCos>0.998)
+            return 2.5;
+        else
+            return 4.0;
+    }
 
-/**
- * @class ORBmatcher
- * @brief This class provides functionality for matching ORB-like features (either with real ORB descriptors or with a custom distance measure).
- *
- * It defines thresholds for descriptor distance (TH_HIGH, TH_LOW), a histogram length for rotation checks (HISTO_LENGTH),
- * and includes methods tailored for matching map points in various scenarios. The matching can use either the standard
- * ORB Hamming distance or a custom L2-based descriptor distance, depending on an environment variable ("USE_ORB").
- *
- * @note The constructor initializes the ratio for nearest-neighbor tests (nnratio) and a flag to check orientation consistency (checkOri).
- * This orientation check is applied after feature matches are tentatively made, using a rotation histogram to retain consistent matches.
- */
-
-/**
- * @brief ComputeThreeMaxima
- *        Identifies the three most populated bins in a rotation histogram and enforces a match consistency check
- *        by discarding matches in bins that do not meet a percentage threshold of the highest bin count.
- *
- * @param histo   Array of rotation histogram bins.
- * @param L       Number of bins in the histogram.
- * @param ind1    First bin index corresponding to the maximum count.
- * @param ind2    Second bin index corresponding to the second maximum count.
- * @param ind3    Third bin index corresponding to the third maximum count.
- *
- * This method is frequently called after tentative 2D-2D matches are found, and ensures only rotations that are
- * consistent with the majority of matches are preserved. It is employed in methods that rely on orientation checks
- * to improve matching robustness, such as SearchByProjection or frame-to-frame matching.
- */
-
-/**
- * @brief DescriptorDistance
- *        Computes the distance between two descriptors, using either:
- *        - A custom L2-squared approach (scaled), if the environment variable "USE_ORB" is not defined.
- *        - The standard ORB Hamming distance, otherwise.
- *
- * @param a  First descriptor.
- * @param b  Second descriptor.
- * @return   Distance as an integer, interpreting either the scaled L2 or Hamming count.
- *
- * This function is a key utility called by other methods in ORBmatcher to compare feature descriptors while searching
- * for matches, ensuring a flexible approach depending on runtime configuration.
- */
-
-/**
- * @brief SearchByProjection (multiple overloads)
- *        Projects 3D map points into an image or keyframe, then iteratively searches for matching features within
- *        a certain search radius. It checks geometric constraints (e.g., depth, viewing angle, scale consistency)
- *        before comparing descriptors for a valid match.
- *
- * @param pKF, Scw, vpPoints, etc.  Various parameters or sets of map points and related data required for the projection.
- * @return                          The number of matches found.
- *
- * These overloads differ primarily in the types of inputs (e.g., KeyFrame vs. Frame, including stereo frames or
- * existing sets of matched points). They rely on DescriptorDistance for final descriptor checks and may utilize
- * ComputeThreeMaxima to enforce orientation consistency. The methods highlight how shared logic (projection checks,
- * search radius selection) is adapted to different scenarios, such as keyframe-to-frame or inter-keyframe matching.
- */
-
-
-
-
-
-
-//Functions searching for matches 
-    //SearchByProjection
-    
 
     //1.
+    /**
+     * @brief Searches for matches between MapPoints in vpPoints and KeyFrame features
+     * 
+     * @param pKF KeyFrame to match against
+     * @param Scw Similarity transformation from world to camera
+     * @param vpPoints Vector of MapPoints to project and match
+     * @param vpMatched Vector to store matched MapPoints (output)
+     * @param th Threshold for search radius
+     * @param ratioHamming Ratio for descriptor distance threshold
+     * @return int Number of matches found
+     * 
+     * Projects MapPoints into KeyFrame, applies geometric constraints 
+     * (depth, viewing angle, scale), and matches based on descriptor similarity.
+     */
     int ORBmatcher::SearchByProjection(KeyFrame* pKF, Sophus::Sim3f &Scw, const vector<MapPoint*> &vpPoints,
         vector<MapPoint*> &vpMatched, int th, float ratioHamming)
     {
@@ -297,15 +282,31 @@ namespace ORB_SLAM3
 
     static int n = 0;
     n++;
-    Verbose::PrintMess(
-        "1.SearchByProjection Map points: " + std::to_string(n) +
-        " Current matches: " + std::to_string(nmatches) +
-        " Total Map points: " + std::to_string(vpPoints.size()),
-        Verbose::VERBOSITY_DEBUG);
+    if (std::getenv("Matcher_Debug") != nullptr) {
+        std::cout << "1.SearchByProjection Map points: " << n
+                  << " Current matches: " << nmatches
+                  << " Total Map points: " << vpPoints.size() << std::endl;
+    }
 
     return nmatches;
     }
     //2.
+    /**
+     * @brief Searches for matches between MapPoints and KeyFrame features, with KeyFrame tracking
+     * 
+     * @param pKF KeyFrame to match against
+     * @param Scw Similarity transformation from world to camera
+     * @param vpPoints Vector of MapPoints to project and match
+     * @param vpPointsKFs Vector of KeyFrames corresponding to each MapPoint
+     * @param vpMatched Vector to store matched MapPoints (output)
+     * @param vpMatchedKF Vector to store corresponding KeyFrames (output)
+     * @param th Threshold for search radius
+     * @param ratioHamming Ratio for descriptor distance threshold
+     * @return int Number of matches found
+     * 
+     * Similar to the first SearchByProjection but also tracks which KeyFrame each 
+     * MapPoint originated from.
+     */
     int ORBmatcher::SearchByProjection(KeyFrame* pKF, Sophus::Sim3<float> &Scw, const std::vector<MapPoint*> &vpPoints, const std::vector<KeyFrame*> &vpPointsKFs,
             std::vector<MapPoint*> &vpMatched, std::vector<KeyFrame*> &vpMatchedKF, int th, float ratioHamming)
     {
@@ -419,17 +420,30 @@ namespace ORB_SLAM3
 
     static int n = 0;
     n++;
-    Verbose::PrintMess(
-        "2.SearchByProjection KeyFrames & Map points: " + std::to_string(n) +
-        " Current matches: " + std::to_string(nmatches) +
-        " Total Map points: " + std::to_string(vpPoints.size()) +
-        " Total KeyFrames: " + std::to_string(vpPointsKFs.size()),
-        Verbose::VERBOSITY_DEBUG);
+    if (std::getenv("Matcher_Debug") != nullptr) {
+        std::cout << "2.SearchByProjection KeyFrames & Map points: " << n
+                  << " Current matches: " << nmatches
+                  << " Total Map points: " << vpPoints.size()
+                  << " Total KeyFrames: " << vpPointsKFs.size() << std::endl;
+    }
 
     return nmatches;
     }
 
     //3.
+    /**
+     * @brief Searches for matches between MapPoints and Frame features
+     * 
+     * @param F Frame to match against
+     * @param vpMapPoints Vector of MapPoints to project and match
+     * @param th Threshold for search radius
+     * @param bFarPoints Whether to consider far points
+     * @param thFarPoints Distance threshold for far points
+     * @return int Number of matches found
+     * 
+     * Projects MapPoints into the Frame and finds the best matches based on descriptor
+     * distance, handling both left and right cameras in stereo setups.
+     */
     int ORBmatcher::SearchByProjection(Frame &F, const vector<MapPoint*> &vpMapPoints, const float th, const bool bFarPoints, const float thFarPoints)
     {
         int nmatches=0, left = 0, right = 0;
@@ -601,34 +615,31 @@ namespace ORB_SLAM3
         }
         static int n = 0;
         n++;
-        Verbose::PrintMess(
-            "3.SearchByProjection Frame & Map points: " + std::to_string(n) +
-            " Current Frame ID: " + std::to_string(F.mnId) +
-            " Timestamp" + std::to_string(F.mTimeStamp) +
-            " Num of Map points: " + std::to_string(vpMapPoints.size()) +
-            " Matches: " + std::to_string(nmatches) +
-            " Left: " + std::to_string(left) +
-            " Right: " + std::to_string(right),
-            Verbose::VERBOSITY_OTHER
-        );
+        if (std::getenv("Matcher_Debug") != nullptr) {
+            std::cout << "3.SearchByProjection Frame & Map points: " << n
+                      << " Current Frame ID: " << F.mnId
+                      << " Timestamp" << F.mTimeStamp
+                      << " Num of Map points: " << vpMapPoints.size()
+                      << " Matches: " << nmatches
+                      << " Left: " << left
+                      << " Right: " << right << std::endl;
+        }
         return nmatches;
     }
 
-    /**
-     * @brief SearchByProjection (Frame &CurrentFrame, const Frame &LastFrame, ...)
-     *        Specialized for frame-to-frame tracking. Maps points from the last frame into the current camera coordinates,
-     *        then seeks corresponding keypoints while respecting scale levels and optionally applying the rotation histogram.
-     *
-     * @param CurrentFrame   The current frame in which to look for matches.
-     * @param LastFrame      The previously processed frame providing seed map points.
-     * @param th             Search radius factor.
-     * @param bMono          Flag indicating if the system is monocular (affects forward/backward motion checks).
-     * @return               The number of successful matches in the new frame.
-     *
-     * This method demonstrates how the matching process is adapted when re-projecting points from a previous frame.
-     * It calls ComputeThreeMaxima to prune matches based on orientation agreement if the mbCheckOrientation flag is set.
-     */
     //4.
+    /**
+     * @brief Searches for matches between LastFrame MapPoints and CurrentFrame features
+     * 
+     * @param CurrentFrame Current frame to match into
+     * @param LastFrame Previous frame with MapPoints to project
+     * @param th Threshold for search radius
+     * @param bMono Whether the system is monocular
+     * @return int Number of matches found
+     * 
+     * Projects MapPoints from LastFrame into CurrentFrame and matches them.
+     * Applies rotation consistency check using histogram if mbCheckOrientation is true.
+     */
     int ORBmatcher::SearchByProjection(Frame &CurrentFrame, const Frame &LastFrame, const float th, const bool bMono)
     {
         int nmatches = 0;
@@ -841,35 +852,32 @@ namespace ORB_SLAM3
 
         static int n = 0;
         n++;
-        Verbose::PrintMess(
-            "4.SearchByProjection curframe & Last Frame: " + std::to_string(n) +
-            " Current Frame ID: " + std::to_string(CurrentFrame.mnId) +
-            " Timestamp" + std::to_string(CurrentFrame.mTimeStamp) +
-            " Last Frame ID: " + std::to_string(LastFrame.mnId) +
-            " Timestamp" + std::to_string(LastFrame.mTimeStamp) +
-            " Matches: " + std::to_string(nmatches),
-            Verbose::VERBOSITY_OTHER
-        );
+        if (std::getenv("Matcher_Debug") != nullptr) {
+            std::cout << "4.SearchByProjection curframe & Last Frame: " << n
+                      << " Current Frame ID: " << CurrentFrame.mnId
+                      << " Timestamp" << CurrentFrame.mTimeStamp
+                      << " Last Frame ID: " << LastFrame.mnId
+                      << " Timestamp" << LastFrame.mTimeStamp
+                      << " Matches: " << nmatches << std::endl;
+        }
         return nmatches;
     }
-    /**
-     * @brief SearchByProjection (Frame &CurrentFrame, KeyFrame *pKF, ...)
-     *        Projects map points associated with a given keyframe into the current frame, searching within a predicted
-     *        scale range and distance invariance constraints. Also checks orientation histogram if needed.
-     *
-     * @param CurrentFrame   The current frame for matching.
-     * @param pKF            The keyframe whose map points are projected.
-     * @param sAlreadyFound  A set of points already matched to avoid duplicates.
-     * @param th             General search radius factor.
-     * @param ORBdist        Additional threshold for descriptor matching.
-     * @return               The number of matches newly established in the current frame.
-     *
-     * This method shares much of its logic with other SearchByProjection variants but adapts to a keyframe reference.
-     * It stresses consistent usage of depth and viewing angle checks, predicted scale level, and descriptor comparison,
-     * illustrating the interplay between functionalities across the full ORBmatcher class.
-     */
+
     //5.
-     int ORBmatcher::SearchByProjection(Frame &CurrentFrame, KeyFrame *pKF, const set<MapPoint*> &sAlreadyFound, const float th , const int ORBdist)
+    /**
+     * @brief Searches for matches between KeyFrame MapPoints and Frame features
+     * 
+     * @param CurrentFrame Frame to match into
+     * @param pKF KeyFrame with MapPoints to project
+     * @param sAlreadyFound Set of MapPoints to exclude (already matched)
+     * @param th Threshold for search radius
+     * @param ORBdist Threshold for descriptor distance
+     * @return int Number of matches found
+     * 
+     * Projects MapPoints from KeyFrame into CurrentFrame and matches them.
+     * Useful for relocalization or loop closing.
+     */
+    int ORBmatcher::SearchByProjection(Frame &CurrentFrame, KeyFrame *pKF, const set<MapPoint*> &sAlreadyFound, const float th, const int ORBdist)
     {
     
         int nmatches = 0;
@@ -992,20 +1000,31 @@ namespace ORB_SLAM3
 
         static int n = 0;
         n++;
-        Verbose::PrintMess(
-            "5.SearchByProjection curframe & KeyFrame: " + std::to_string(n) +
-            " Current Frame ID: " + std::to_string(CurrentFrame.mnId) +
-            " Timestamp" + std::to_string(CurrentFrame.mTimeStamp) +
-            " KeyFrame ID: " + std::to_string(pKF->mnId) +
-            " Timestamp" + std::to_string(pKF->mTimeStamp) +
-            " Matches: " + std::to_string(nmatches),
-            Verbose::VERBOSITY_OTHER
-        );
+        if (std::getenv("Matcher_Debug") != nullptr) {
+            std::cout << "5.SearchByProjection curframe & KeyFrame: " << n
+                      << " Current Frame ID: " << CurrentFrame.mnId
+                      << " Timestamp" << CurrentFrame.mTimeStamp
+                      << " KeyFrame ID: " << pKF->mnId
+                      << " Timestamp" << pKF->mTimeStamp
+                      << " Matches: " << nmatches << std::endl;
+        }
         return nmatches;
     }
 
-    //SearchByBoW
-    int ORBmatcher::SearchByBoW(KeyFrame* pKF,Frame &F, vector<MapPoint*> &vpMapPointMatches)
+    //6.
+    /**
+     * @brief Matches KeyFrame MapPoints to Frame features using BoW vocabulary
+     * 
+     * @param pKF KeyFrame containing MapPoints
+     * @param F Frame to match against
+     * @param vpMapPointMatches Vector to store matched MapPoints (output)
+     * @return int Number of matches found
+     * 
+     * Uses Bag of Words (BoW) representation to quickly find potential matches
+     * between MapPoints in KeyFrame and features in Frame. Verifies matches
+     * with descriptor distance and optional orientation consistency.
+     */
+    int ORBmatcher::SearchByBoW(KeyFrame* pKF, Frame &F, vector<MapPoint*> &vpMapPointMatches)
     {
         const vector<MapPoint*> vpMapPointsKF = pKF->GetMapPointMatches();
 
@@ -1206,9 +1225,31 @@ namespace ORB_SLAM3
             }
         }
 
+        static int n = 0;
+        n++;
+        if (std::getenv("Matcher_Debug") != nullptr) {
+            std::cout << "6.SearchByBoW KeyFrame to Frame: " << n
+                      << " KeyFrame ID: " << pKF->mnId
+                      << " Frame ID: " << F.mnId
+                      << " Timestamp: " << F.mTimeStamp
+                      << " Matches: " << nmatches << std::endl;
+        }
+
         return nmatches;
     }
 
+    //7.    
+    /**
+     * @brief Matches MapPoints between two KeyFrames using BoW vocabulary
+     * 
+     * @param pKF1 First KeyFrame
+     * @param pKF2 Second KeyFrame
+     * @param vpMatches12 Vector to store matched MapPoints from KF2 for each MapPoint in KF1 (output)
+     * @return int Number of matches found
+     * 
+     * Uses Bag of Words to efficiently match MapPoints between KeyFrames.
+     * Useful for loop closing and essential graph building.
+     */
     int ORBmatcher::SearchByBoW(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &vpMatches12)
     {
         const vector<cv::KeyPoint> &vKeysUn1 = pKF1->mvKeysUn;
@@ -1348,10 +1389,33 @@ namespace ORB_SLAM3
             }
         }
 
+        static int n = 0;
+        n++;
+        if (std::getenv("Matcher_Debug") != nullptr) {
+            std::cout << "7.SearchByBoW KeyFrame to KeyFrame: " << n
+                      << " KF1 ID: " << pKF1->mnId
+                      << " KF2 ID: " << pKF2->mnId
+                      << " Matches: " << nmatches
+                      << " Total MapPoints: " << vpMatches12.size() << std::endl;
+        }
+
         return nmatches;
     }
 
-    // SearchBySim3
+    //8.
+    /**
+     * @brief Matches MapPoints between KeyFrames using a known Sim3 transformation
+     * 
+     * @param pKF1 First KeyFrame
+     * @param pKF2 Second KeyFrame
+     * @param vpMatches12 Vector to store matched MapPoints (output)
+     * @param S12 Similarity transformation from KF1 to KF2
+     * @param th Threshold for search radius
+     * @return int Number of matches found
+     * 
+     * Projects MapPoints using a known Sim3 transformation (e.g., from loop closing)
+     * and finds matches based on descriptor distance. Requires agreement in both directions.
+     */
     int ORBmatcher::SearchBySim3(KeyFrame* pKF1, KeyFrame* pKF2, std::vector<MapPoint *> &vpMatches12, const Sophus::Sim3f &S12, const float th)
     {
         const float &fx = pKF1->fx;
@@ -1568,20 +1632,33 @@ namespace ORB_SLAM3
             }
         }
 
+        static int n = 0;
+        n++;
+        if (std::getenv("Matcher_Debug") != nullptr) {
+            std::cout << "8.SearchBySim3: " << n
+                      << " KF1 ID: " << pKF1->mnId
+                      << " KF2 ID: " << pKF2->mnId
+                      << " Matches: " << nFound
+                      << " Total MapPoints: " << vpMatches12.size() << std::endl;
+        }
+
         return nFound;
     }
 
-    // SearchForInitialization
-
-
-    float ORBmatcher::RadiusByViewingCos(const float &viewCos)
-    {
-        if(viewCos>0.998)
-            return 2.5;
-        else
-            return 4.0;
-    }
-
+    //9.
+    /**
+     * @brief Matches features between two Frames during initialization
+     * 
+     * @param F1 First Frame
+     * @param F2 Second Frame
+     * @param vbPrevMatched Previous matches (predicted locations in F2)
+     * @param vnMatches12 Indices of matching keypoints in F2 for each keypoint in F1 (output)
+     * @param windowSize Window size for searching around predicted locations
+     * @return int Number of matches found
+     * 
+     * Finds matches between features in two Frames during system initialization.
+     * Uses predicted locations and checks ratio test and optional orientation consistency.
+     */
     int ORBmatcher::SearchForInitialization(Frame &F1, Frame &F2, vector<cv::Point2f> &vbPrevMatched, vector<int> &vnMatches12, int windowSize)
     {
         int nmatches=0;
@@ -1696,10 +1773,35 @@ namespace ORB_SLAM3
             if(vnMatches12[i1]>=0)
                 vbPrevMatched[i1]=F2.mvKeysUn[vnMatches12[i1]].pt;
 
+        static int n = 0;
+        n++;
+        if (std::getenv("Matcher_Debug") != nullptr) {
+            std::cout << "9.SearchForInitialization: " << n
+                      << " Frame1 ID: " << F1.mnId
+                      << " Frame2 ID: " << F2.mnId
+                      << " Window Size: " << windowSize
+                      << " Matches: " << nmatches
+                      << " Total keypoints: " << vnMatches12.size() << std::endl;
+        }
+
         return nmatches;
     }
 
-
+    //10.
+    /**
+     * @brief Finds matches between unmatched keypoints of two KeyFrames for triangulation
+     * 
+     * @param pKF1 First KeyFrame
+     * @param pKF2 Second KeyFrame
+     * @param vMatchedPairs Pairs of matching indices (output)
+     * @param bOnlyStereo Whether to use only keypoints with stereo info
+     * @param bCoarse Whether to skip epipolar constraint check
+     * @return int Number of matches found
+     * 
+     * Matches keypoints without associated MapPoints between two KeyFrames
+     * to create new MapPoints through triangulation. Uses BoW for efficiency,
+     * epipolar constraints, and descriptor distance.
+     */
     int ORBmatcher::SearchForTriangulation(KeyFrame *pKF1, KeyFrame *pKF2,
                                            vector<pair<size_t, size_t> > &vMatchedPairs, const bool bOnlyStereo, const bool bCoarse)
     {
@@ -1938,9 +2040,35 @@ namespace ORB_SLAM3
             vMatchedPairs.push_back(make_pair(i,vMatches12[i]));
         }
 
+        static int n = 0;
+        n++;
+        if (std::getenv("Matcher_Debug") != nullptr) {
+            std::cout << "10.SearchForTriangulation: " << n
+                      << " KF1 ID: " << pKF1->mnId
+                      << " KF2 ID: " << pKF2->mnId
+                      << " Only Stereo: " << (bOnlyStereo ? "true" : "false")
+                      << " Coarse: " << (bCoarse ? "true" : "false")
+                      << " Matches: " << nmatches
+                      << " Matched Pairs: " << vMatchedPairs.size() << std::endl;
+        }
+
         return nmatches;
     }
 
+    //11.
+    /**
+     * @brief Fuses MapPoints into a KeyFrame if they project to similar features
+     * 
+     * @param pKF KeyFrame to fuse MapPoints into
+     * @param vpMapPoints Vector of candidate MapPoints
+     * @param th Threshold for search radius
+     * @param bRight Whether to project into right camera (stereo)
+     * @return int Number of MapPoints fused
+     * 
+     * Projects MapPoints into KeyFrame and checks for matching features.
+     * If a matching feature already has a MapPoint, the one with more observations
+     * is kept. Otherwise, the MapPoint is added to the KeyFrame.
+     */
     int ORBmatcher::Fuse(KeyFrame *pKF, const vector<MapPoint *> &vpMapPoints, const float th, const bool bRight)
     {
         GeometricCamera* pCamera;
@@ -2130,9 +2258,34 @@ namespace ORB_SLAM3
 
         }
 
+        static int n = 0;
+        n++;
+        if (std::getenv("Matcher_Debug") != nullptr) {
+            std::cout << "11.Fuse MapPoints: " << n
+                      << " KF ID: " << pKF->mnId
+                      << " Right camera: " << (bRight ? "true" : "false")
+                      << " Threshold: " << th
+                      << " MapPoints: " << vpMapPoints.size()
+                      << " Fused: " << nFused << std::endl;
+        }
+
         return nFused;
     }
 
+    //12.
+    /**
+     * @brief Fuses MapPoints into a KeyFrame using Sim3 transformation
+     * 
+     * @param pKF KeyFrame to fuse MapPoints into
+     * @param Scw Similarity transformation from world to camera
+     * @param vpPoints Vector of candidate MapPoints
+     * @param th Threshold for search radius
+     * @param vpReplacePoint Vector to store replaced MapPoints (output)
+     * @return int Number of MapPoints fused
+     * 
+     * Similar to Fuse but uses a Sim3 transformation, typically during
+     * loop closure. Records replaced MapPoints for updating the map.
+     */
     int ORBmatcher::Fuse(KeyFrame *pKF, Sophus::Sim3f &Scw, const vector<MapPoint *> &vpPoints, float th, vector<MapPoint *> &vpReplacePoint)
     {
         // Get Calibration Parameters for later projection
@@ -2245,6 +2398,17 @@ namespace ORB_SLAM3
                 }
                 nFused++;
             }
+        }
+
+        static int n = 0;
+        n++;
+        if (std::getenv("Matcher_Debug") != nullptr) {
+            std::cout << "12.Fuse with Sim3: " << n
+                      << " KF ID: " << pKF->mnId
+                      << " Threshold: " << th
+                      << " MapPoints: " << vpPoints.size()
+                      << " Fused: " << nFused
+                      << " Replaced: " << count(vpReplacePoint.begin(), vpReplacePoint.end(), static_cast<MapPoint*>(nullptr)) << std::endl;
         }
 
         return nFused;
