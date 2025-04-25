@@ -78,6 +78,8 @@
         "valarray": "cpp",
         "variant": "cpp",
         "bit": "cpp",
-        "netfwd": "cpp"
+        "netfwd": "cpp",
+        "*.ipp": "cpp",
+        "slist": "cpp"
     }
 }

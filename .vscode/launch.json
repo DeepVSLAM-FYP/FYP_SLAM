@@ -35,6 +35,36 @@
             ]
         },
         {
+            "name": "SP_Mono_EuroC",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/Examples/SP/monoSP_euroc",
+            "args": [
+                // "${workspaceFolder}/Vocabulary/SPvoc.dbow3",
+                "${workspaceFolder}/Vocabulary/superpoint_voc.yml",
+                "${workspaceFolder}/SuperPoint_SLAM/Examples/Monocular/EuRoC.yaml",
+                "${workspaceFolder}/datasets/MH01/mav0/cam0/data",
+                "${workspaceFolder}/SuperPoint_SLAM/Examples/Monocular/EuRoC_TimeStamps/MH01.txt"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${fileDirname}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
             "name": "XFMono_EuroC",
             "type": "cppdbg",
             "request": "launch",
