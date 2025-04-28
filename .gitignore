@@ -34,7 +34,8 @@ Thirdparty/**/*.a
 Thirdparty/**/*.dylib
 Thirdparty/**/*.dll
 
-Examples/
+/Examples/
+
 Trajectories/
 
 # General build artifacts in any directory
@@ -85,3 +86,7 @@ Table_*
 
 #soft links
 datasets
+
+_trash/
+SuperPoint_SLAM/
+Vocabulary/SPvoc.dbow3

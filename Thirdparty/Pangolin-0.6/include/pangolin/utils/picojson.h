@@ -46,6 +46,8 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <limits>
+
 
 #include <pangolin/compat/type_traits.h>
 

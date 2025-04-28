@@ -25,10 +25,13 @@
 #include<opencv2/features2d/features2d.hpp>
 #include"sophus/sim3.hpp"
 
+// TODO: When migrating to FBOW, no need to modify includes here as this class doesn't directly include any DBoW2 headers
+// The modifications will be needed in the .cc implementation file where DBoW2 FeatureVector is used
+
 #include"MapPoint.h"
 #include"KeyFrame.h"
 #include"Frame.h"
-#include "system.h"
+#include "System.h"
 
 
 namespace ORB_SLAM3
@@ -66,6 +69,8 @@ namespace ORB_SLAM3
         // Search matches between MapPoints in a KeyFrame and ORB in a Frame.
         // Brute force constrained to ORB that belong to the same vocabulary node (at a certain level)
         // Used in Relocalisation and Loop Detection
+        // TODO: The following SearchByBoW functions need to be updated in ORBmatcher.cc
+        // to work with FBOW BoWVector and BoWFeatVector instead of DBoW2::BowVector and DBoW2::FeatureVector
         int SearchByBoW(KeyFrame *pKF, Frame &F, std::vector<MapPoint*> &vpMapPointMatches);
         int SearchByBoW(KeyFrame *pKF1, KeyFrame* pKF2, std::vector<MapPoint*> &vpMatches12);
 
@@ -73,6 +78,7 @@ namespace ORB_SLAM3
         int SearchForInitialization(Frame &F1, Frame &F2, std::vector<cv::Point2f> &vbPrevMatched, std::vector<int> &vnMatches12, int windowSize=10);
 
         // Matching to triangulate new MapPoints. Check Epipolar Constraint.
+        // TODO: SearchForTriangulation also uses DBoW2::FeatureVector iterators and needs updates in the .cc file
         int SearchForTriangulation(KeyFrame *pKF1, KeyFrame* pKF2,
                                    std::vector<pair<size_t, size_t> > &vMatchedPairs, const bool bOnlyStereo, const bool bCoarse = false);
 

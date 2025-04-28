@@ -22,8 +22,10 @@
 
 #include<vector>
 
+// TODO: Replace DBoW2 includes with FBOW includes
 #include "Thirdparty/DBoW2/DBoW2/BowVector.h"
 #include "Thirdparty/DBoW2/DBoW2/FeatureVector.h"
+// TODO: Add: #include "Thirdparty/fbow/include/fbow.h" 
 
 #include "Thirdparty/Sophus/sophus/geometry.hpp"
 
@@ -73,6 +75,8 @@ public:
     // Extract ORB on the image. 0 for left image and 1 for right image.
     void ExtractORB(int flag, const cv::Mat &im, const int x0, const int x1);
 
+    // TODO: Update ComputeBoW() method implementation in Frame.cc 
+    // to use FBOW's API for computing BoW vectors
     // Compute Bag of Words representation.
     void ComputeBoW();
 
@@ -235,8 +239,12 @@ public:
     std::vector<float> mvDepth;
 
     // Bag of Words Vector structures.
+    // TODO: Replace DBoW2 vectors with FBOW equivalents
     DBoW2::BowVector mBowVec;
     DBoW2::FeatureVector mFeatVec;
+    // TODO: Change to: 
+    // fbow::BoWVector mBowVec;
+    // fbow::BoWFeatVector mFeatVec;
 
     // ORB descriptor, each row associated to a keypoint.
     cv::Mat mDescriptors, mDescriptorsRight;
