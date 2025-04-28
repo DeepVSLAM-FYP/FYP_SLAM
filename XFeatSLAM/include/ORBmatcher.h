@@ -99,6 +99,7 @@ namespace ORB_SLAM3
 
         static const int TH_LOW;
         static const int TH_HIGH;
+        static const bool USE_ORB;
         static const int HISTO_LENGTH;
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
