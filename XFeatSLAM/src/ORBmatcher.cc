@@ -42,6 +42,7 @@ namespace ORB_SLAM3
 {
     const int ORBmatcher::TH_HIGH = (std::getenv("USE_ORB") == nullptr) ? 1000 : 100;
     const int ORBmatcher::TH_LOW = (std::getenv("USE_ORB") == nullptr) ? 100 : 50;
+    const bool ORBmatcher::USE_ORB = (std::getenv("USE_ORB") != nullptr);
     const int ORBmatcher::HISTO_LENGTH = 30;
 
     ORBmatcher::ORBmatcher(float nnratio, bool checkOri): mfNNratio(nnratio), mbCheckOrientation(checkOri)
@@ -739,7 +740,7 @@ namespace ORB_SLAM3
                         CurrentFrame.mvpMapPoints[bestIdx2]=pMP;
                         nmatches++;
 
-                        if(mbCheckOrientation)
+                        if(mbCheckOrientation && USE_ORB)
                         {
                             cv::KeyPoint kpLF = (LastFrame.Nleft == -1) ? LastFrame.mvKeysUn[i]
                                                                         : (i < LastFrame.Nleft) ? LastFrame.mvKeys[i]
@@ -804,7 +805,7 @@ namespace ORB_SLAM3
                         {
                             CurrentFrame.mvpMapPoints[bestIdx2 + CurrentFrame.Nleft]=pMP;
                             nmatches++;
-                            if(mbCheckOrientation)
+                            if(mbCheckOrientation && USE_ORB)
                             {
                                 cv::KeyPoint kpLF = (LastFrame.Nleft == -1) ? LastFrame.mvKeysUn[i]
                                                                             : (i < LastFrame.Nleft) ? LastFrame.mvKeys[i]
@@ -829,7 +830,7 @@ namespace ORB_SLAM3
         }
 
         //Apply rotation consistency
-        if(mbCheckOrientation)
+        if(mbCheckOrientation && USE_ORB)
         {
             int ind1=-1;
             int ind2=-1;
@@ -960,7 +961,7 @@ namespace ORB_SLAM3
                         CurrentFrame.mvpMapPoints[bestIdx2]=pMP;
                         nmatches++;
 
-                        if(mbCheckOrientation)
+                        if(mbCheckOrientation && USE_ORB)
                         {
                             float rot = pKF->mvKeysUn[i].angle-CurrentFrame.mvKeysUn[bestIdx2].angle;
                             if(rot<0.0)
@@ -977,7 +978,7 @@ namespace ORB_SLAM3
             }
         }
 
-        if(mbCheckOrientation)
+        if(mbCheckOrientation && USE_ORB)
         {
             int ind1=-1;
             int ind2=-1;
@@ -1139,7 +1140,7 @@ namespace ORB_SLAM3
                                     (realIdxKF >= pKF -> NLeft) ? pKF -> mvKeysRight[realIdxKF - pKF -> NLeft]
                                                                 : pKF -> mvKeys[realIdxKF];
 
-                            if(mbCheckOrientation)
+                            if(mbCheckOrientation && USE_ORB)
                             {
                                 cv::KeyPoint &Fkp =
                                         (!pKF->mpCamera2 || F.Nleft == -1) ? F.mvKeys[bestIdxF] :
@@ -1169,7 +1170,7 @@ namespace ORB_SLAM3
                                         (realIdxKF >= pKF -> NLeft) ? pKF -> mvKeysRight[realIdxKF - pKF -> NLeft]
                                                                     : pKF -> mvKeys[realIdxKF];
 
-                                if(mbCheckOrientation)
+                                if(mbCheckOrientation && USE_ORB)
                                 {
                                     cv::KeyPoint &Fkp =
                                             (!F.mpCamera2) ? F.mvKeys[bestIdxFR] :
@@ -1205,7 +1206,7 @@ namespace ORB_SLAM3
             }
         }
 
-        if(mbCheckOrientation)
+        if(mbCheckOrientation && USE_ORB)
         {
             int ind1=-1;
             int ind2=-1;
@@ -1340,7 +1341,7 @@ namespace ORB_SLAM3
                             vpMatches12[idx1]=vpMapPoints2[bestIdx2];
                             vbMatched2[bestIdx2]=true;
 
-                            if(mbCheckOrientation)
+                            if(mbCheckOrientation && USE_ORB)
                             {
                                 float rot = vKeysUn1[idx1].angle-vKeysUn2[bestIdx2].angle;
                                 if(rot<0.0)
@@ -1369,7 +1370,7 @@ namespace ORB_SLAM3
             }
         }
 
-        if(mbCheckOrientation)
+        if(mbCheckOrientation && USE_ORB)
         {
             int ind1=-1;
             int ind2=-1;
@@ -1727,7 +1728,7 @@ namespace ORB_SLAM3
                     vMatchedDistance[bestIdx2]=bestDist;
                     nmatches++;
 
-                    if(mbCheckOrientation)
+                    if(mbCheckOrientation && USE_ORB)
                     {
                         float rot = F1.mvKeysUn[i1].angle-F2.mvKeysUn[bestIdx2].angle;
                         if(rot<0.0)
@@ -1743,7 +1744,7 @@ namespace ORB_SLAM3
 
         }
 
-        if(mbCheckOrientation)
+        if(mbCheckOrientation && USE_ORB)
         {
             int ind1=-1;
             int ind2=-1;
@@ -1982,7 +1983,7 @@ namespace ORB_SLAM3
                         vMatches12[idx1]=bestIdx2;
                         nmatches++;
 
-                        if(mbCheckOrientation)
+                        if(mbCheckOrientation && USE_ORB)
                         {
                             float rot = kp1.angle-kp2.angle;
                             if(rot<0.0)
@@ -2009,7 +2010,7 @@ namespace ORB_SLAM3
             }
         }
 
-        if(mbCheckOrientation)
+        if(mbCheckOrientation && USE_ORB)
         {
             int ind1=-1;
             int ind2=-1;

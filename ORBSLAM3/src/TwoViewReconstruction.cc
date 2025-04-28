@@ -21,7 +21,9 @@
 #include "Converter.h"
 #include "GeometricTools.h"
 
+// TODO: Replace DBoW2 Random utility with C++ standard library
 #include "Thirdparty/DBoW2/DUtils/Random.h"
+// TODO: Add: #include <random>
 
 #include<thread>
 
@@ -78,7 +80,12 @@ namespace ORB_SLAM3
         // Generate sets of 8 points for each RANSAC iteration
         mvSets = vector< vector<size_t> >(mMaxIterations,vector<size_t>(8,0));
 
+        // TODO: Replace DUtils::Random with C++ standard library random functions
         DUtils::Random::SeedRandOnce(0);
+        // Example replacement:
+        // std::random_device rd;
+        // std::mt19937 gen(rd());
+        // gen.seed(0); // Use a fixed seed for reproducibility
 
         for(int it=0; it<mMaxIterations; it++)
         {
@@ -87,6 +94,7 @@ namespace ORB_SLAM3
             // Select a minimum set
             for(size_t j=0; j<8; j++)
             {
+                // TODO: Replace DUtils::Random with C++ standard library
                 int randi = DUtils::Random::RandomInt(0,vAvailableIndices.size()-1);
                 int idx = vAvailableIndices[randi];
 
