@@ -23,6 +23,9 @@
 #include "MapPoint.h"
 #include "Thirdparty/DBoW2/DBoW2/BowVector.h"
 #include "Thirdparty/DBoW2/DBoW2/FeatureVector.h"
+// TODO: Replace DBoW2 includes with FBOW include
+// TODO: Add: #include "Thirdparty/fbow/include/fbow.h"
+
 #include "ORBVocabulary.h"
 #include "ORBextractor.h"
 #include "Frame.h"
@@ -214,7 +217,16 @@ public:
     Eigen::Vector3f GetVelocity();
     bool isVelocitySet();
 
-    // Bag of Words Representation
+    // Bag of Words Vector structures.
+    // TODO: Replace DBoW2 vectors with FBOW equivalents
+    // DBoW2::BowVector mBowVec;
+    // DBoW2::FeatureVector mFeatVec;
+    // TODO: Change to: 
+    // fbow::BoWVector mBowVec;
+    // fbow::BoWFeatVector mFeatVec;
+
+    // TODO: Update ComputeBoW() method implementation in KeyFrame.cc 
+    // to use FBOW's API for computing BoW vectors
     void ComputeBoW();
 
     // Covisibility graph functions
