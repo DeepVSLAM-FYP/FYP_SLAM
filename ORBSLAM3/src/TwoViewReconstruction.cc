@@ -21,9 +21,10 @@
 #include "Converter.h"
 #include "GeometricTools.h"
 
-// TODO: Replace DBoW2 Random utility with C++ standard library
-#include "Thirdparty/DBoW2/DUtils/Random.h"
-// TODO: Add: #include <random>
+// Replacing DBoW2 Random utility with C++ standard library
+// #include "Thirdparty/DBoW2/DUtils/Random.h"
+#include "Thirdparty/FBOW/include/fbow/fbow.h"
+#include <random>
 
 #include<thread>
 
@@ -80,12 +81,11 @@ namespace ORB_SLAM3
         // Generate sets of 8 points for each RANSAC iteration
         mvSets = vector< vector<size_t> >(mMaxIterations,vector<size_t>(8,0));
 
-        // TODO: Replace DUtils::Random with C++ standard library random functions
-        DUtils::Random::SeedRandOnce(0);
-        // Example replacement:
-        // std::random_device rd;
-        // std::mt19937 gen(rd());
-        // gen.seed(0); // Use a fixed seed for reproducibility
+        // Replaced DUtils::Random with C++ standard library random functions
+        // DUtils::Random::SeedRandOnce(0);
+        std::mt19937 gen;
+        gen.seed(0); // Use a fixed seed for reproducibility
+        std::uniform_int_distribution<> dist;
 
         for(int it=0; it<mMaxIterations; it++)
         {
@@ -94,8 +94,8 @@ namespace ORB_SLAM3
             // Select a minimum set
             for(size_t j=0; j<8; j++)
             {
-                // TODO: Replace DUtils::Random with C++ standard library
-                int randi = DUtils::Random::RandomInt(0,vAvailableIndices.size()-1);
+                // Replace DUtils::Random::RandomInt with std::uniform_int_distribution
+                int randi = dist(gen) % vAvailableIndices.size();
                 int idx = vAvailableIndices[randi];
 
                 mvSets[it][j] = idx;

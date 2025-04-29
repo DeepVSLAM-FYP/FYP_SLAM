@@ -25,8 +25,6 @@
 #include<opencv2/features2d/features2d.hpp>
 #include"sophus/sim3.hpp"
 
-// TODO: When migrating to FBOW, no need to modify includes here as this class doesn't directly include any DBoW2 headers
-// The modifications will be needed in the .cc implementation file where DBoW2 FeatureVector is used
 
 #include"MapPoint.h"
 #include"KeyFrame.h"
@@ -69,8 +67,6 @@ namespace ORB_SLAM3
         // Search matches between MapPoints in a KeyFrame and ORB in a Frame.
         // Brute force constrained to ORB that belong to the same vocabulary node (at a certain level)
         // Used in Relocalisation and Loop Detection
-        // TODO: The following SearchByBoW functions need to be updated in ORBmatcher.cc
-        // to work with FBOW BoWVector and BoWFeatVector instead of DBoW2::BowVector and DBoW2::FeatureVector
         int SearchByBoW(KeyFrame *pKF, Frame &F, std::vector<MapPoint*> &vpMapPointMatches);
         int SearchByBoW(KeyFrame *pKF1, KeyFrame* pKF2, std::vector<MapPoint*> &vpMatches12);
 
@@ -78,9 +74,8 @@ namespace ORB_SLAM3
         int SearchForInitialization(Frame &F1, Frame &F2, std::vector<cv::Point2f> &vbPrevMatched, std::vector<int> &vnMatches12, int windowSize=10);
 
         // Matching to triangulate new MapPoints. Check Epipolar Constraint.
-        // TODO: SearchForTriangulation also uses DBoW2::FeatureVector iterators and needs updates in the .cc file
         int SearchForTriangulation(KeyFrame *pKF1, KeyFrame* pKF2,
-                                   std::vector<pair<size_t, size_t> > &vMatchedPairs, const bool bOnlyStereo, const bool bCoarse = false);
+                                   std::vector<std::pair<size_t, size_t> > &vMatchedPairs, const bool bOnlyStereo, const bool bCoarse = false);
 
         // Search matches between MapPoints seen in KF1 and KF2 transforming by a Sim3 [s12*R12|t12]
         // In the stereo and RGB-D case, s12=1
@@ -88,10 +83,10 @@ namespace ORB_SLAM3
         int SearchBySim3(KeyFrame* pKF1, KeyFrame* pKF2, std::vector<MapPoint *> &vpMatches12, const Sophus::Sim3f &S12, const float th);
 
         // Project MapPoints into KeyFrame and search for duplicated MapPoints.
-        int Fuse(KeyFrame* pKF, const vector<MapPoint *> &vpMapPoints, const float th=3.0, const bool bRight = false);
+        int Fuse(KeyFrame* pKF, const std::vector<MapPoint *> &vpMapPoints, const float th=3.0, const bool bRight = false);
 
         // Project MapPoints into KeyFrame using a given Sim3 and search for duplicated MapPoints.
-        int Fuse(KeyFrame* pKF, Sophus::Sim3f &Scw, const std::vector<MapPoint*> &vpPoints, float th, vector<MapPoint *> &vpReplacePoint);
+        int Fuse(KeyFrame* pKF, Sophus::Sim3f &Scw, const std::vector<MapPoint*> &vpPoints, float th, std::vector<MapPoint *> &vpReplacePoint);
 
     public:
 

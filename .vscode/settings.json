@@ -82,6 +82,7 @@
         "*.ipp": "cpp",
         "slist": "cpp",
         "csetjmp": "cpp",
-        "source_location": "cpp"
+        "source_location": "cpp",
+        "span": "cpp"
     }
 }

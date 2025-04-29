@@ -3,7 +3,6 @@
         {
             "name": "Linux",
             "includePath": [
-                "${workspaceFolder}/XFeatSLAM/include",
                 "${workspaceFolder}/ORBSLAM3/include",
                 "${workspaceFolder}/Thirdparty",
                 "${workspaceFolder}/Thirdparty/libs/include/opencv4",
@@ -12,7 +11,8 @@
                 "${workspaceFolder}/Thirdparty/libs/include",
                 "${workspaceFolder}/Thirdparty/libs/include/eigen3",
                 "${workspaceFolder}",
-                "${workspaceFolder}/Thirdparty/pytorch/torch/include/torch/csrc/api/include"
+                "${workspaceFolder}/Thirdparty/pytorch/torch/include/torch/csrc/api/include",
+                "${workspaceFolder}/ORBSLAM3"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
