@@ -10,7 +10,7 @@ MESSAGE("Build type: " ${CMAKE_BUILD_TYPE})
 # set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -Wall   -O3")
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall   -O3")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -O3")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wconversion-null -Wdeprecated")
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -march=native")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=native")
 
@@ -75,155 +75,56 @@ set(COMMON_LIBRARIES
     -lcrypto
 )
 
-# 1. Core Module
-add_library(orbslam3_core SHARED
+# Combine all source files into a single library
+add_library(${PROJECT_NAME} SHARED
+    # Core Module
     src/System.cc
     src/Config.cc
     src/Settings.cc
-    include/System.h
-    include/Config.h
-    include/Settings.h
-)
-target_link_libraries(orbslam3_core ${COMMON_LIBRARIES})
-
-# 2. Tracking Module
-add_library(orbslam3_tracking SHARED
+    
+    # Tracking Module
     src/Tracking.cc
     src/Frame.cc
-    include/Tracking.h
-    include/Frame.h
-)
-target_link_libraries(orbslam3_tracking 
-    orbslam3_core
-    orbslam3_features
-    ${COMMON_LIBRARIES}
-)
-
-# 3. Mapping Module
-add_library(orbslam3_mapping SHARED
+    
+    # Mapping Module
     src/LocalMapping.cc
     src/LoopClosing.cc
-    include/LocalMapping.h
-    include/LoopClosing.h
-)
-target_link_libraries(orbslam3_mapping 
-    orbslam3_core
-    orbslam3_map
-    orbslam3_optimizer
-    ${COMMON_LIBRARIES}
-)
-
-# 4. Map Data Module
-add_library(orbslam3_map SHARED
+    
+    # Map Data Module
     src/Map.cc
     src/Atlas.cc
     src/MapPoint.cc
     src/KeyFrame.cc
     src/KeyFrameDatabase.cc
-    include/Map.h
-    include/Atlas.h
-    include/MapPoint.h
-    include/KeyFrame.h
-    include/KeyFrameDatabase.h
-)
-target_link_libraries(orbslam3_map 
-    orbslam3_core
-    ${COMMON_LIBRARIES}
-)
-
-# 5. Feature Module
-add_library(orbslam3_features SHARED
+    
+    # Feature Module
     src/ORBextractor.cc
     src/ORBmatcher.cc
-    include/ORBextractor.h
-    include/ORBmatcher.h
-    include/ORBVocabulary.h
-)
-target_link_libraries(orbslam3_features 
-    orbslam3_core
-    ${COMMON_LIBRARIES}
-)
-
-# 6. Optimization Module
-add_library(orbslam3_optimizer SHARED
+    
+    # Optimization Module
     src/Optimizer.cc
     src/G2oTypes.cc
     src/OptimizableTypes.cpp
     src/Sim3Solver.cc
     src/MLPnPsolver.cpp
-    include/Optimizer.h
-    include/G2oTypes.h
-    include/OptimizableTypes.h
-    include/Sim3Solver.h
-    include/MLPnPsolver.h
-)
-target_link_libraries(orbslam3_optimizer 
-    orbslam3_core
-    orbslam3_map
-    ${COMMON_LIBRARIES}
-)
-
-# 7. Camera Models Module
-add_library(orbslam3_cameras SHARED
+    
+    # Camera Models Module
     src/CameraModels/Pinhole.cpp
     src/CameraModels/KannalaBrandt8.cpp
-    include/CameraModels/GeometricCamera.h
-    include/CameraModels/Pinhole.h
-    include/CameraModels/KannalaBrandt8.h
-)
-target_link_libraries(orbslam3_cameras 
-    orbslam3_core
-    ${COMMON_LIBRARIES}
-)
-
-# 8. Visualization Module
-add_library(orbslam3_visualization SHARED
+    
+    # Visualization Module
     src/FrameDrawer.cc
     src/MapDrawer.cc
     src/Viewer.cc
-    include/FrameDrawer.h
-    include/MapDrawer.h
-    include/Viewer.h
-)
-target_link_libraries(orbslam3_visualization 
-    orbslam3_core
-    orbslam3_map
-    ${COMMON_LIBRARIES}
-)
-
-# 9. Utilities Module
-add_library(orbslam3_utils SHARED
+    
+    # Utilities Module
     src/Converter.cc
     src/GeometricTools.cc
     src/TwoViewReconstruction.cc
     src/ImuTypes.cc
-    include/Converter.h
-    include/GeometricTools.h
-    include/TwoViewReconstruction.h
-    include/ImuTypes.h
-    include/SerializationUtils.h
-)
-target_link_libraries(orbslam3_utils 
-    orbslam3_core
-    ${COMMON_LIBRARIES}
 )
 
-# Main ORB_SLAM3 meta-library that links all modules together
-add_library(${PROJECT_NAME} SHARED
-    # Just a thin wrapper to link all modules
-    src/System.cc
-)
-target_link_libraries(${PROJECT_NAME}
-    orbslam3_core
-    orbslam3_tracking
-    orbslam3_mapping
-    orbslam3_map
-    orbslam3_features
-    orbslam3_optimizer
-    orbslam3_cameras
-    orbslam3_visualization
-    orbslam3_utils
-)
+target_link_libraries(${PROJECT_NAME} ${COMMON_LIBRARIES})
 
 # Build examples - these link to the main library which includes all modules
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_ROOT_DIR}/Examples/ORB)
