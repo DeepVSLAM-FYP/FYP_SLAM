@@ -69,7 +69,8 @@ set(COMMON_LIBRARIES
     ${OpenCV_LIBS}
     ${EIGEN3_LIBS}
     ${Pangolin_LIBRARIES}
-    ${PROJECT_ROOT_DIR}/Thirdparty/libs/lib/libDBoW2.so
+#     ${PROJECT_ROOT_DIR}/Thirdparty/libs/lib/libDBoW2.so
+    ${PROJECT_ROOT_DIR}/Thirdparty/libs/lib/libfbow.so
     ${PROJECT_ROOT_DIR}/Thirdparty/libs/lib/libg2o.so
     -lboost_serialization
     -lcrypto

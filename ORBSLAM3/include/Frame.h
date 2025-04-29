@@ -23,8 +23,9 @@
 #include<vector>
 
 // TODO: Replace DBoW2 includes with FBOW includes
-#include "Thirdparty/DBoW2/DBoW2/BowVector.h"
-#include "Thirdparty/DBoW2/DBoW2/FeatureVector.h"
+// #include "Thirdparty/DBoW2/DBoW2/BowVector.h"
+// #include "Thirdparty/DBoW2/DBoW2/FeatureVector.h"
+#include "Thirdparty/FBOW/include/fbow.h"
 // TODO: Add: #include "Thirdparty/fbow/include/fbow.h" 
 
 #include "Thirdparty/Sophus/sophus/geometry.hpp"
@@ -243,7 +244,7 @@ public:
     DBoW2::BowVector mBowVec;
     DBoW2::FeatureVector mFeatVec;
     // TODO: Change to: 
-    // fbow::BoWVector mBowVec;
+    fbow::BoWVector mBowVec;
     // fbow::BoWFeatVector mFeatVec;
 
     // ORB descriptor, each row associated to a keypoint.

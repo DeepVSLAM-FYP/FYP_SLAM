@@ -10,7 +10,9 @@
                 "${workspaceFolder}/ORBSLAM3/include/CameraModels",
                 "${workspaceFolder}/Thirdparty/DBoW2/DBoW2",
                 "${workspaceFolder}/Thirdparty/libs/include",
-                "${workspaceFolder}/Thirdparty/libs/include/eigen3"
+                "${workspaceFolder}/Thirdparty/libs/include/eigen3",
+                "${workspaceFolder}",
+                "${workspaceFolder}/Thirdparty/pytorch/torch/include/torch/csrc/api/include"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
