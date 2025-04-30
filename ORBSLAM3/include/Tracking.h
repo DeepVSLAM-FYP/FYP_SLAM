@@ -31,7 +31,7 @@
 #include "Frame.h"
 #include "ORBVocabulary.h"
 #include "KeyFrameDatabase.h"
-#include "ORBextractor.h"
+#include "FeatureExtractors.h"
 #include "MapDrawer.h"
 #include "System.h"
 #include "ImuTypes.h"
@@ -229,6 +229,11 @@ protected:
     // Reset IMU biases and compute frame velocity
     void ResetFrameIMU();
 
+    // Create appropriate feature extractor based on settings
+    FeatureExtractor* CreateFeatureExtractor(
+        int nFeatures, float scaleFactor, int nLevels, 
+        int iniThFAST, int minThFAST, const std::string& type);
+
     bool mbMapUpdated;
 
     // Imu preintegration from last frame
@@ -258,8 +263,8 @@ protected:
     LoopClosing* mpLoopClosing;
 
     //ORB
-    ORBextractor* mpORBextractorLeft, *mpORBextractorRight;
-    ORBextractor* mpIniORBextractor;
+    FeatureExtractor* mpORBextractorLeft, *mpORBextractorRight;
+    FeatureExtractor* mpIniORBextractor;
 
     //BoW
     ORBVocabulary* mpORBVocabulary;

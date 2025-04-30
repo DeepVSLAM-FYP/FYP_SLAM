@@ -13,25 +13,24 @@ public:
     virtual ~FeatureExtractor() = default;
 
     // --- main call -------------------------------------------------
-    virtual void operator()(const cv::Mat& image,
-                            std::vector<cv::KeyPoint>& kps,
+    virtual int operator()(const cv::Mat& image, cv::InputArray _mask,
+                            std::vector<cv::KeyPoint>& _keypoints,
                             cv::Mat& descriptors,
-                            std::vector<int>& vLappingArea) const = 0;
+                            std::vector<int>& vLappingArea) = 0;
 
     // --- scale-space info -----------------------------------------
-    virtual int                 levels()            const = 0;
-    virtual float               scaleFactor()       const = 0;
-    virtual const std::vector<float>&     scaleFactors()      const = 0;
-    virtual const std::vector<float>&     invScaleFactors()   const = 0;
-    virtual const std::vector<float>&     levelSigma2()       const = 0;
-    virtual const std::vector<float>&     invLevelSigma2()    const = 0;
+    virtual int                 GetLevels()            const = 0;
+    virtual float               GetScaleFactor()       const = 0;
+    virtual const std::vector<float>&     GetScaleFactors()      const = 0;
+    virtual const std::vector<float>&     GetInverseScaleFactors()   const = 0;
+    virtual const std::vector<float>&     GetScaleSigmaSquares()       const = 0;
+    virtual const std::vector<float>&     GetInverseScaleSigmaSquares()    const = 0;
+    virtual const std::vector<cv::Mat>& GetImagePyramid() const = 0;
 
     // --- descriptor traits ----------------------------------------
     virtual int       descriptorType()   const = 0;   // OpenCV enum
     virtual int       descriptorLength() const = 0;   // bytes/floats
     virtual NormType  norm()             const = 0;   // Hamming or L2
 
-    // --- optional: reuse the pyramid for stereo -------------------
-    virtual const std::vector<cv::Mat>& imagePyramid() const = 0;
 };
 } // namespace ORB_SLAM3

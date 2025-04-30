@@ -443,11 +443,34 @@ namespace ORB_SLAM3 {
     void Settings::readORB(cv::FileStorage &fSettings) {
         bool found;
 
-        nFeatures_ = readParameter<int>(fSettings,"ORBextractor.nFeatures",found);
-        scaleFactor_ = readParameter<float>(fSettings,"ORBextractor.scaleFactor",found);
-        nLevels_ = readParameter<int>(fSettings,"ORBextractor.nLevels",found);
-        initThFAST_ = readParameter<int>(fSettings,"ORBextractor.iniThFAST",found);
-        minThFAST_ = readParameter<int>(fSettings,"ORBextractor.minThFAST",found);
+        // Read feature extractor type (default to ORB if not specified)
+        featureExtractorType_ = readParameter<string>(fSettings,"FeatureExtractor.type", found, false);
+        if (!found || featureExtractorType_.empty()) {
+            featureExtractorType_ = "ORB";
+            std::cout << "Feature extractor type not specified, defaulting to ORB" << std::endl;
+        }
+        
+        if (featureExtractorType_ == "ORB") {
+            nFeatures_ = readParameter<int>(fSettings,"ORBextractor.nFeatures",found);
+            scaleFactor_ = readParameter<float>(fSettings,"ORBextractor.scaleFactor",found);
+            nLevels_ = readParameter<int>(fSettings,"ORBextractor.nLevels",found);
+            initThFAST_ = readParameter<int>(fSettings,"ORBextractor.iniThFAST",found);
+            minThFAST_ = readParameter<int>(fSettings,"ORBextractor.minThFAST",found);
+        }else if (featureExtractorType_ == "SIFT") {
+            nFeatures_ = readParameter<int>(fSettings,"SIFTextractor.nFeatures",found);
+            scaleFactor_ = readParameter<float>(fSettings,"SIFTextractor.scaleFactor",found);
+            nLevels_ = readParameter<int>(fSettings,"SIFTextractor.nLevels",found);
+            initThFAST_ = 0;
+            minThFAST_ = 0;
+        }
+        else{
+            nFeatures_ = 1000;
+            scaleFactor_ = 1.0f;
+            nLevels_ = 1;
+            initThFAST_ = 0;
+            minThFAST_ = 0;
+            std::cout << "Extractor: " << featureExtractorType_ << " is initialized with default values" << std::endl;
+        }
     }
 
     void Settings::readViewer(cv::FileStorage &fSettings) {
