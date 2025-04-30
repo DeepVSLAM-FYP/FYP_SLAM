@@ -93,7 +93,10 @@ protected:
     std::vector<cv::Point> pattern;
 
     int nfeatures;
+    // given by the user typically 1.2
     double scaleFactor;
+
+    // number of levels in the scale pyramid typically 8
     int nlevels;
     int iniThFAST;
     int minThFAST;
@@ -102,8 +105,11 @@ protected:
 
     std::vector<int> umax;
 
+    // Scale factors for the different levels, mvScaleFactor[level_i] = scaleFactor^i
     std::vector<float> mvScaleFactor;
     std::vector<float> mvInvScaleFactor;    
+
+    //mvLevelSigma2[level_i] = mvScaleFactor[level_i]^2
     std::vector<float> mvLevelSigma2;
     std::vector<float> mvInvLevelSigma2;
 };
