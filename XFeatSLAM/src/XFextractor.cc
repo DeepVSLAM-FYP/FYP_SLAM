@@ -130,10 +130,12 @@ namespace ORB_SLAM3
         }
         
         // load the xfeat model
+        // std::string weights = "weights/xfeat.pt";
         std::string weights = "weights/xfeat.pt";
         model = std::make_shared<XFeatModel>();
         torch::serialize::InputArchive archive;
-        archive.load_from(getModelWeightsPath(weights));
+        // archive.load_from(getModelWeightsPath(weights));
+        archive.load_from("/mnt/sda1/FYP_2024/Ruchith/FYP_SLAM/XFeatSLAM/weights/xfeat.pt");
         model->load(archive);
         std::cout << "XFeat model weights loaded successfully!" << std::endl;
 

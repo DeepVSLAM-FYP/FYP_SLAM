@@ -12,7 +12,8 @@
                 "${workspaceFolder}/Thirdparty/libs/include/eigen3",
                 "${workspaceFolder}",
                 "${workspaceFolder}/Thirdparty/pytorch/torch/include/torch/csrc/api/include",
-                "${workspaceFolder}/ORBSLAM3"
+                "${workspaceFolder}/ORBSLAM3",
+                "${workspaceFolder}/ORBSLAM3/include/FeatureExtractors"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

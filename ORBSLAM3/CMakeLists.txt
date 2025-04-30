@@ -56,6 +56,7 @@ include_directories(
         ${PROJECT_SOURCE_DIR}
         ${PROJECT_SOURCE_DIR}/include
         ${PROJECT_SOURCE_DIR}/include/CameraModels
+        ${PROJECT_SOURCE_DIR}/include/FeatureExtractors
         ${PROJECT_ROOT_DIR}/Thirdparty/Sophus
         ${EIGEN3_INCLUDE_DIR}
         ${Pangolin_INCLUDE_DIRS}
@@ -74,6 +75,15 @@ set(COMMON_LIBRARIES
     ${PROJECT_ROOT_DIR}/Thirdparty/libs/lib/libg2o.so
     -lboost_serialization
     -lcrypto
+)
+
+add_library(Feature_Extractors SHARED
+    src/FeatureExtractors/ORBextractor.cc
+)
+
+target_link_libraries( Feature_Extractors
+    ${OpenCV_LIBS}
+    ${EIGEN3_LIBS}
 )
 
 # Combine all source files into a single library
@@ -99,7 +109,7 @@ add_library(${PROJECT_NAME} SHARED
     src/KeyFrameDatabase.cc
     
     # Feature Module
-    src/ORBextractor.cc
+#     src/ORBextractor.cc
     src/ORBmatcher.cc
     
     # Optimization Module
@@ -125,7 +135,7 @@ add_library(${PROJECT_NAME} SHARED
     src/ImuTypes.cc
 )
 
-target_link_libraries(${PROJECT_NAME} ${COMMON_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${COMMON_LIBRARIES} Feature_Extractors)
 
 # Build examples - these link to the main library which includes all modules
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_ROOT_DIR}/Examples/ORB)
