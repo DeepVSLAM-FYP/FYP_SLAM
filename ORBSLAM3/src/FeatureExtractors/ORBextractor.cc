@@ -59,7 +59,7 @@
 #include <vector>
 #include <iostream>
 
-#include "ORBextractor.h"
+#include "FeatureExtractors.h"
 
 
 using namespace cv;
@@ -1083,34 +1083,34 @@ namespace ORB_SLAM3
             computeOrbDescriptor(keypoints[i], image, &pattern[0], descriptors.ptr((int)i));
     }
 
-    int ORBextractor::operator()( InputArray _image, InputArray _mask, vector<KeyPoint>& _keypoints,
-                                  OutputArray _descriptors, std::vector<int> &vLappingArea)
+    int ORBextractor::operator()( const cv::Mat& image, cv::InputArray _mask, vector<KeyPoint>& _keypoints,
+                                  cv::Mat& descriptors, std::vector<int> &vLappingArea)
     {
         //cout << "[ORBextractor]: Max Features: " << nfeatures << endl;
-        if(_image.empty())
+        if(image.empty())
             return -1;
 
-        Mat image = _image.getMat();
-        assert(image.type() == CV_8UC1 );
+        Mat image_copy = image.clone();
+        assert(image_copy.type() == CV_8UC1 );
 
         // Pre-compute the scale pyramid
-        ComputePyramid(image);
+        ComputePyramid(image_copy);
 
         vector < vector<KeyPoint> > allKeypoints;
         ComputeKeyPointsOctTree(allKeypoints);
         //ComputeKeyPointsOld(allKeypoints);
 
-        Mat descriptors;
+        Mat descriptors_temp;
 
         int nkeypoints = 0;
         for (int level = 0; level < nlevels; ++level)
             nkeypoints += (int)allKeypoints[level].size();
         if( nkeypoints == 0 )
-            _descriptors.release();
+            descriptors = cv::Mat();
         else
         {
-            _descriptors.create(nkeypoints, 32, CV_8U);
-            descriptors = _descriptors.getMat();
+            descriptors.create(nkeypoints, 32, CV_8U);
+            descriptors_temp = descriptors;
         }
 
         //_keypoints.clear();

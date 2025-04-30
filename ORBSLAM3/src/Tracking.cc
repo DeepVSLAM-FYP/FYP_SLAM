@@ -592,13 +592,18 @@ void Tracking::newParameterLoader(Settings *settings) {
     int fMinThFAST = settings->minThFAST();
     float fScaleFactor = settings->scaleFactor();
 
-    mpORBextractorLeft = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
+    // In Tracking::newParameterLoader
+    std::string extractorType = settings->featureExtractorType();
+    mpORBextractorLeft = CreateFeatureExtractor(nFeatures, fScaleFactor, nLevels, 
+                                            fIniThFAST, fMinThFAST, extractorType);
 
     if(mSensor==System::STEREO || mSensor==System::IMU_STEREO)
-        mpORBextractorRight = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
+        mpORBextractorRight = CreateFeatureExtractor(nFeatures, fScaleFactor, nLevels, 
+                                                fIniThFAST, fMinThFAST, extractorType);
 
     if(mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR)
-        mpIniORBextractor = new ORBextractor(5*nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
+        mpIniORBextractor = CreateFeatureExtractor(5*nFeatures, fScaleFactor, nLevels, 
+                                                fIniThFAST, fMinThFAST, extractorType);
 
     //IMU parameters
     Sophus::SE3f Tbc = settings->Tbc();
@@ -1219,60 +1224,119 @@ bool Tracking::ParseORBParamFile(cv::FileStorage &fSettings)
     bool b_miss_params = false;
     int nFeatures, nLevels, fIniThFAST, fMinThFAST;
     float fScaleFactor;
+    string extractorType;
 
-    cv::FileNode node = fSettings["ORBextractor.nFeatures"];
-    if(!node.empty() && node.isInt())
+    cv::FileNode node = fSettings["FeatureExtractor.extractorType"];
+    if(!node.empty() && node.isString())
     {
-        nFeatures = node.operator int();
+        extractorType = node.string();
     }
     else
     {
-        std::cerr << "*ORBextractor.nFeatures parameter doesn't exist or is not an integer*" << std::endl;
+        std::cerr << "*FeatureExtractor.extractorType parameter doesn't exist or is not a string*" << std::endl;
         b_miss_params = true;
     }
 
-    node = fSettings["ORBextractor.scaleFactor"];
-    if(!node.empty() && node.isReal())
+    if(extractorType == "ORB")
     {
-        fScaleFactor = node.real();
-    }
-    else
-    {
-        std::cerr << "*ORBextractor.scaleFactor parameter doesn't exist or is not a real number*" << std::endl;
-        b_miss_params = true;
-    }
+        node = fSettings["ORBextractor.nFeatures"];
+        if(!node.empty() && node.isInt())
+        {
+            nFeatures = node.operator int();
+        }
+        else
+        {
+            std::cerr << "*ORBextractor.nFeatures parameter doesn't exist or is not an integer*" << std::endl;
+            b_miss_params = true;
+        }
 
-    node = fSettings["ORBextractor.nLevels"];
-    if(!node.empty() && node.isInt())
-    {
-        nLevels = node.operator int();
-    }
-    else
-    {
-        std::cerr << "*ORBextractor.nLevels parameter doesn't exist or is not an integer*" << std::endl;
-        b_miss_params = true;
-    }
+        node = fSettings["ORBextractor.scaleFactor"];
+        if(!node.empty() && node.isReal())
+        {
+            fScaleFactor = node.real();
+        }
+        else
+        {
+            std::cerr << "*ORBextractor.scaleFactor parameter doesn't exist or is not a real number*" << std::endl;
+            b_miss_params = true;
+        }
 
-    node = fSettings["ORBextractor.iniThFAST"];
-    if(!node.empty() && node.isInt())
-    {
-        fIniThFAST = node.operator int();
-    }
-    else
-    {
-        std::cerr << "*ORBextractor.iniThFAST parameter doesn't exist or is not an integer*" << std::endl;
-        b_miss_params = true;
-    }
+        node = fSettings["ORBextractor.nLevels"];
+        if(!node.empty() && node.isInt())
+        {
+            nLevels = node.operator int();
+        }
+        else
+        {
+            std::cerr << "*ORBextractor.nLevels parameter doesn't exist or is not an integer*" << std::endl;
+            b_miss_params = true;
+        }
 
-    node = fSettings["ORBextractor.minThFAST"];
-    if(!node.empty() && node.isInt())
+        node = fSettings["ORBextractor.iniThFAST"];
+        if(!node.empty() && node.isInt())
+        {
+            fIniThFAST = node.operator int();
+        }
+        else
+        {
+            std::cerr << "*ORBextractor.iniThFAST parameter doesn't exist or is not an integer*" << std::endl;
+            b_miss_params = true;
+        }
+
+        node = fSettings["ORBextractor.minThFAST"];
+        if(!node.empty() && node.isInt())
+        {
+            fMinThFAST = node.operator int();
+        }
+        else
+        {
+            std::cerr << "*ORBextractor.minThFAST parameter doesn't exist or is not an integer*" << std::endl;
+            b_miss_params = true;
+        }
+    }else if(extractorType == "SIFT")
     {
-        fMinThFAST = node.operator int();
-    }
-    else
-    {
-        std::cerr << "*ORBextractor.minThFAST parameter doesn't exist or is not an integer*" << std::endl;
-        b_miss_params = true;
+        node = fSettings["SIFTextractor.nFeatures"];
+        if(!node.empty() && node.isInt())
+        {
+            nFeatures = node.operator int();
+        }
+        else
+        {
+            std::cerr << "*SIFTextractor.nFeatures parameter doesn't exist or is not an integer*" << std::endl;
+            b_miss_params = true;
+        }
+
+        node = fSettings["SIFTextractor.scaleFactor"];
+        if(!node.empty() && node.isReal())
+        {
+            fScaleFactor = node.real();
+        }
+        else
+        {
+            std::cerr << "*SIFTextractor.scaleFactor parameter doesn't exist or is not a real number*" << std::endl;
+            b_miss_params = true;
+        }
+
+        node = fSettings["SIFTextractor.nLevels"];
+        if(!node.empty() && node.isInt())
+        {
+            nLevels = node.operator int();
+        }
+        else
+        {
+            std::cerr << "*SIFTextractor.nLevels parameter doesn't exist or is not an integer*" << std::endl;
+            b_miss_params = true;
+        }
+
+        fIniThFAST = 0;
+        fMinThFAST = 0;
+    }else {
+        nFeatures = 1000;
+        fScaleFactor = 1.0f;
+        nLevels = 1;
+        fIniThFAST = 0;
+        fMinThFAST = 0;
+        cout << "for " << extractorType << " extractor, Default parameters are used" << endl;
     }
 
     if(b_miss_params)
@@ -1280,13 +1344,16 @@ bool Tracking::ParseORBParamFile(cv::FileStorage &fSettings)
         return false;
     }
 
-    mpORBextractorLeft = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
+    mpORBextractorLeft = CreateFeatureExtractor(nFeatures, fScaleFactor, nLevels, 
+        fIniThFAST, fMinThFAST, extractorType);
 
     if(mSensor==System::STEREO || mSensor==System::IMU_STEREO)
-        mpORBextractorRight = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
+    mpORBextractorRight = CreateFeatureExtractor(nFeatures, fScaleFactor, nLevels, 
+                fIniThFAST, fMinThFAST, extractorType);
 
     if(mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR)
-        mpIniORBextractor = new ORBextractor(5*nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
+    mpIniORBextractor = CreateFeatureExtractor(5*nFeatures, fScaleFactor, nLevels, 
+                fIniThFAST, fMinThFAST, extractorType);
 
     cout << endl << "ORB Extractor Parameters: " << endl;
     cout << "- Number of Features: " << nFeatures << endl;
@@ -1790,6 +1857,25 @@ void Tracking::ResetFrameIMU()
     // TODO To implement...
 }
 
+FeatureExtractor* Tracking::CreateFeatureExtractor(
+    int nFeatures, float scaleFactor, int nLevels, 
+    int iniThFAST, int minThFAST, const std::string& type) 
+{
+    if (type == "ORB" || type.empty()) {
+        return new ORBextractor(nFeatures, scaleFactor, nLevels, iniThFAST, minThFAST);
+    }else if (type == "SIFT") {
+        throw std::runtime_error("SIFT extractor not implemented");
+    }else if (type == "SP DPU") {
+        throw std::runtime_error("SP DPU extractor not implemented");
+    }else if (type == "XFEAT") {
+        throw std::runtime_error("XFEAT extractor not implemented");
+    }else if (type == "DUMMY") {
+        throw std::runtime_error("DUMMY extractor not implemented");
+    }else {
+        throw std::runtime_error("Unknown feature extractor type: " + type);
+        return nullptr;
+    }
+}
 
 void Tracking::Track()
 {

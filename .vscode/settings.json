@@ -83,6 +83,7 @@
         "slist": "cpp",
         "csetjmp": "cpp",
         "source_location": "cpp",
-        "span": "cpp"
+        "span": "cpp",
+        "core": "cpp"
     }
 }

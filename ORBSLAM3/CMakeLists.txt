@@ -140,31 +140,36 @@ target_link_libraries(${PROJECT_NAME} ${COMMON_LIBRARIES} Feature_Extractors)
 # Build examples - these link to the main library which includes all modules
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_ROOT_DIR}/Examples/ORB)
 
-add_executable(rgbdORB_tum
-        Examples/RGB-D/rgbd_tum.cc)
-target_link_libraries(rgbdORB_tum ${PROJECT_NAME})
 
-add_executable(monoORB_tum
-        Examples/Monocular/mono_tum.cc)
-target_link_libraries(monoORB_tum ${PROJECT_NAME})
-
-add_executable(monoORB_kitti
-        Examples/Monocular/mono_kitti.cc)
-target_link_libraries(monoORB_kitti ${PROJECT_NAME})
 
 add_executable(monoORB_euroc
         Examples/Monocular/mono_euroc.cc)
 target_link_libraries(monoORB_euroc ${PROJECT_NAME})
 
-add_executable(monoORB_tum_vi
-        Examples/Monocular/mono_tum_vi.cc)
-target_link_libraries(monoORB_tum_vi ${PROJECT_NAME})
 
-add_executable(monoORB_inertial_euroc
-        Examples/Monocular-Inertial/mono_inertial_euroc.cc)
-target_link_libraries(monoORB_inertial_euroc ${PROJECT_NAME})
+#TODO: make these examples work
+# add_executable(monoORB_tum
+#         Examples/Monocular/mono_tum.cc)
+# target_link_libraries(monoORB_tum ${PROJECT_NAME})
 
-add_executable(monoORB_inertial_tum_vi
-        Examples/Monocular-Inertial/mono_inertial_tum_vi.cc)
-target_link_libraries(monoORB_inertial_tum_vi ${PROJECT_NAME})
+# add_executable(monoORB_kitti
+#         Examples/Monocular/mono_kitti.cc)
+# target_link_libraries(monoORB_kitti ${PROJECT_NAME})
+
+#note: the following examples are still not working 
+# add_executable(rgbdORB_tum
+#         Examples/RGB-D/rgbd_tum.cc)
+# target_link_libraries(rgbdORB_tum ${PROJECT_NAME})
+
+# add_executable(monoORB_tum_vi
+#         Examples/Monocular/mono_tum_vi.cc)
+# target_link_libraries(monoORB_tum_vi ${PROJECT_NAME})
+
+# add_executable(monoORB_inertial_euroc
+#         Examples/Monocular-Inertial/mono_inertial_euroc.cc)
+# target_link_libraries(monoORB_inertial_euroc ${PROJECT_NAME})
+
+# add_executable(monoORB_inertial_tum_vi
+#         Examples/Monocular-Inertial/mono_inertial_tum_vi.cc)
+# target_link_libraries(monoORB_inertial_tum_vi ${PROJECT_NAME})
 message(STATUS "Libraries will be built in: ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")

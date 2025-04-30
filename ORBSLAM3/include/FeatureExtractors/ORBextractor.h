@@ -22,6 +22,7 @@
 #include <vector>
 #include <list>
 #include <opencv2/opencv.hpp>
+#include "FeatureExtractorBase.h"
 
 
 namespace ORB_SLAM3
@@ -40,7 +41,7 @@ public:
     bool bNoMore;
 };
 
-class ORBextractor
+class ORBextractor : public FeatureExtractor
 {
 public:
     
@@ -54,33 +55,20 @@ public:
     // Compute the ORB features and descriptors on an image.
     // ORB are dispersed on the image using an octree.
     // Mask is ignored in the current implementation.
-    int operator()( cv::InputArray _image, cv::InputArray _mask,
+    int operator()(const cv::Mat& image, cv::InputArray _mask,
                     std::vector<cv::KeyPoint>& _keypoints,
-                    cv::OutputArray _descriptors, std::vector<int> &vLappingArea);
+                    cv::Mat& descriptors, std::vector<int>& vLappingArea) override;
+    inline int GetLevels() const override {return nlevels;}
+    inline float GetScaleFactor() const override {return scaleFactor;}
+    inline const std::vector<float>& GetScaleFactors() const override {return mvScaleFactor;}
+    inline const std::vector<float>& GetInverseScaleFactors() const override {return mvInvScaleFactor;}
+    inline const std::vector<float>& GetScaleSigmaSquares() const override {return mvLevelSigma2;}
+    inline const std::vector<float>& GetInverseScaleSigmaSquares() const override {return mvInvLevelSigma2;}
+    inline const std::vector<cv::Mat>& GetImagePyramid() const override {return mvImagePyramid;}
 
-    int inline GetLevels(){
-        return nlevels;}
-
-    float inline GetScaleFactor(){
-        return scaleFactor;}
-
-    std::vector<float> inline GetScaleFactors(){
-        return mvScaleFactor;
-    }
-
-    std::vector<float> inline GetInverseScaleFactors(){
-        return mvInvScaleFactor;
-    }
-
-    std::vector<float> inline GetScaleSigmaSquares(){
-        return mvLevelSigma2;
-    }
-
-    std::vector<float> inline GetInverseScaleSigmaSquares(){
-        return mvInvLevelSigma2;
-    }
-
-    std::vector<cv::Mat> mvImagePyramid;
+    int descriptorType() const override { return CV_8U; }
+    int descriptorLength() const override { return 32; } // ORB uses 32 bytes
+    NormType norm() const override { return NormType::HAMMING; }
 
 protected:
 
@@ -112,6 +100,9 @@ protected:
     //mvLevelSigma2[level_i] = mvScaleFactor[level_i]^2
     std::vector<float> mvLevelSigma2;
     std::vector<float> mvInvLevelSigma2;
+
+    // Image pyramid moved to private use GetImagePyramid() to access it
+    std::vector<cv::Mat> mvImagePyramid;
 };
 
 } //namespace ORB_SLAM

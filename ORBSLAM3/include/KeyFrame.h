@@ -26,7 +26,7 @@
 #include "Thirdparty/FBOW/include/fbow/fbow.h"
 
 #include "ORBVocabulary.h"
-#include "ORBextractor.h"
+#include "FeatureExtractors.h"
 #include "Frame.h"
 #include "KeyFrameDatabase.h"
 #include "ImuTypes.h"
