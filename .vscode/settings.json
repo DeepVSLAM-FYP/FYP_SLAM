@@ -80,6 +80,9 @@
         "bit": "cpp",
         "netfwd": "cpp",
         "*.ipp": "cpp",
-        "slist": "cpp"
+        "slist": "cpp",
+        "csetjmp": "cpp",
+        "source_location": "cpp",
+        "span": "cpp"
     }
 }

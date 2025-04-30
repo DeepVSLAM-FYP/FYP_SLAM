@@ -19,10 +19,9 @@
 
 #include "KeyFrameDatabase.h"
 
-// TODO: Replace DBoW2 includes with FBOW include
 #include "KeyFrame.h"
-#include "Thirdparty/DBoW2/DBoW2/BowVector.h"
-// TODO: Add: #include "Thirdparty/fbow/include/fbow.h"
+// #include "Thirdparty/DBoW2/DBoW2/BoWVector.h"
+#include "Thirdparty/FBOW/include/fbow/fbow.h"
 
 #include<mutex>
 
@@ -34,21 +33,22 @@ namespace ORB_SLAM3
 KeyFrameDatabase::KeyFrameDatabase (const ORBVocabulary &voc):
     mpVoc(&voc)
 {
-// TODO: Update inverted file structure for FBOW compatibility
-    mvInvertedFile.resize(voc.size());
+    // the wordsIDs can get larger than the voc.size() [number of leaf nodes].
+    // since there is no way to know the number of words in advance, we set the size to 10 times 
+    mvInvertedFile.resize(10 * voc.size());
 }
 
 
 void KeyFrameDatabase::add(KeyFrame *pKF)
 {
     unique_lock<mutex> lock(mMutex);
-
-// TODO: Update for FBOW BowVector iteration
-    for(DBoW2::BowVector::const_iterator vit= pKF->mBowVec.begin(), vend=pKF->mBowVec.end(); vit!=vend; vit++)
+    for(fbow::BoWVector::const_iterator vit= pKF->mBowVec.begin(), vend=pKF->mBowVec.end(); vit!=vend; vit++){
+        if(vit->first >= mvInvertedFile.size()){
+            cout << "KeyFrameDatabase::add: Resizing inverted file from " << mvInvertedFile.size() << " to " << 2*vit->first << endl;
+            mvInvertedFile.resize(2*vit->first);
+        }
         mvInvertedFile[vit->first].push_back(pKF);
-// For FBOW: 
-    // for(fbow::BoWVector::const_iterator vit= pKF->mBowVec.begin(), vend=pKF->mBowVec.end(); vit!=vend; vit++)
-    //     mvInvertedFile[vit->first].push_back(pKF);
+    }
 }
 
 void KeyFrameDatabase::erase(KeyFrame* pKF)
@@ -56,8 +56,7 @@ void KeyFrameDatabase::erase(KeyFrame* pKF)
     unique_lock<mutex> lock(mMutex);
 
     // Erase elements in the Inverse File for the entry
-// TODO: Update for FBOW BowVector iteration
-    for(DBoW2::BowVector::const_iterator vit=pKF->mBowVec.begin(), vend=pKF->mBowVec.end(); vit!=vend; vit++)
+    for(fbow::BoWVector::const_iterator vit=pKF->mBowVec.begin(), vend=pKF->mBowVec.end(); vit!=vend; vit++)
     {
         // List of keyframes that share the word
         list<KeyFrame*> &lKFs =   mvInvertedFile[vit->first];
@@ -82,7 +81,6 @@ void KeyFrameDatabase::erase(KeyFrame* pKF)
 void KeyFrameDatabase::clear()
 {
     mvInvertedFile.clear();
-// TODO: Ensure FBOW vocabulary size method is used
     mvInvertedFile.resize(mpVoc->size());
 }
 
@@ -121,9 +119,7 @@ vector<KeyFrame*> KeyFrameDatabase::DetectLoopCandidates(KeyFrame* pKF, float mi
     // Discard keyframes connected to the query keyframe
     {
         unique_lock<mutex> lock(mMutex);
-
-// TODO: Update for FBOW BowVector iteration
-        for(DBoW2::BowVector::const_iterator vit=pKF->mBowVec.begin(), vend=pKF->mBowVec.end(); vit != vend; vit++)
+        for(fbow::BoWVector::const_iterator vit=pKF->mBowVec.begin(), vend=pKF->mBowVec.end(); vit != vend; vit++)
         {
             list<KeyFrame*> &lKFs =   mvInvertedFile[vit->first];
 
@@ -175,9 +171,8 @@ vector<KeyFrame*> KeyFrameDatabase::DetectLoopCandidates(KeyFrame* pKF, float mi
         {
             nscores++;
 
-// TODO: Update for FBOW score method
-            float si = mpVoc->score(pKF->mBowVec,pKFi->mBowVec);
-// For FBOW, the method name or signature may be different
+            // float si = mpVoc->score(pKF->mBowVec,pKFi->mBowVec);
+            float si = score(pKF->mBowVec,pKFi->mBowVec);
 
             pKFi->mLoopScore = si;
             if(si>=minScore)
@@ -253,8 +248,8 @@ void KeyFrameDatabase::DetectCandidates(KeyFrame* pKF, float minScore,vector<Key
     {
         unique_lock<mutex> lock(mMutex);
 
-// TODO: Update for FBOW BowVector iteration
-        for(DBoW2::BowVector::const_iterator vit=pKF->mBowVec.begin(), vend=pKF->mBowVec.end(); vit != vend; vit++)
+// TODO: Update for FBOW BoWVector iteration
+        for(fbow::BoWVector::const_iterator vit=pKF->mBowVec.begin(), vend=pKF->mBowVec.end(); vit != vend; vit++)
         {
             list<KeyFrame*> &lKFs = mvInvertedFile[vit->first];
 
@@ -319,7 +314,8 @@ void KeyFrameDatabase::DetectCandidates(KeyFrame* pKF, float minScore,vector<Key
             {
                 nscores++;
 
-                float si = mpVoc->score(pKF->mBowVec,pKFi->mBowVec);
+                // float si = mpVoc->score(pKF->mBowVec,pKFi->mBowVec);
+                float si = score(pKF->mBowVec,pKFi->mBowVec);
 
                 pKFi->mLoopScore = si;
                 if(si>=minScore)
@@ -407,7 +403,7 @@ void KeyFrameDatabase::DetectCandidates(KeyFrame* pKF, float minScore,vector<Key
             {
                 nscores++;
 
-                float si = mpVoc->score(pKF->mBowVec,pKFi->mBowVec);
+                float si = score(pKF->mBowVec,pKFi->mBowVec);
 
                 pKFi->mMergeScore = si;
                 if(si>=minScore)
@@ -471,7 +467,7 @@ void KeyFrameDatabase::DetectCandidates(KeyFrame* pKF, float minScore,vector<Key
     }
 
 // TODO: Update this section at the end of the function to use FBOW iterators
-    for(DBoW2::BowVector::const_iterator vit=pKF->mBowVec.begin(), vend=pKF->mBowVec.end(); vit != vend; vit++)
+    for(fbow::BoWVector::const_iterator vit=pKF->mBowVec.begin(), vend=pKF->mBowVec.end(); vit != vend; vit++)
     {
         list<KeyFrame*> &lKFs = mvInvertedFile[vit->first];
 
@@ -500,7 +496,7 @@ void KeyFrameDatabase::DetectBestCandidates(KeyFrame *pKF, vector<KeyFrame*> &vp
 
         spConnectedKF = pKF->GetConnectedKeyFrames();
 
-        for(DBoW2::BowVector::const_iterator vit=pKF->mBowVec.begin(), vend=pKF->mBowVec.end(); vit != vend; vit++)
+        for(fbow::BoWVector::const_iterator vit=pKF->mBowVec.begin(), vend=pKF->mBowVec.end(); vit != vend; vit++)
         {
             list<KeyFrame*> &lKFs =   mvInvertedFile[vit->first];
 
@@ -552,7 +548,8 @@ void KeyFrameDatabase::DetectBestCandidates(KeyFrame *pKF, vector<KeyFrame*> &vp
         if(pKFi->mnPlaceRecognitionWords>minCommonWords)
         {
             nscores++;
-            float si = mpVoc->score(pKF->mBowVec,pKFi->mBowVec);
+            // float si = mpVoc->score(pKF->mBowVec,pKFi->mBowVec);
+            float si = score(pKF->mBowVec,pKFi->mBowVec);
             pKFi->mPlaceRecognitionScore=si;
             lScoreAndMatch.push_back(make_pair(si,pKFi));
         }
@@ -636,7 +633,7 @@ void KeyFrameDatabase::DetectNBestCandidates(KeyFrame *pKF, vector<KeyFrame*> &v
 
         spConnectedKF = pKF->GetConnectedKeyFrames();
 
-        for(DBoW2::BowVector::const_iterator vit=pKF->mBowVec.begin(), vend=pKF->mBowVec.end(); vit != vend; vit++)
+        for(fbow::BoWVector::const_iterator vit=pKF->mBowVec.begin(), vend=pKF->mBowVec.end(); vit != vend; vit++)
         {
             list<KeyFrame*> &lKFs =   mvInvertedFile[vit->first];
 
@@ -684,7 +681,9 @@ void KeyFrameDatabase::DetectNBestCandidates(KeyFrame *pKF, vector<KeyFrame*> &v
         {
             nscores++;
 // TODO: Update for FBOW score method
-            float si = mpVoc->score(pKF->mBowVec,pKFi->mBowVec);
+
+            // float si = mpVoc->score(pKF->mBowVec,pKFi->mBowVec);
+            float si = score(pKF->mBowVec,pKFi->mBowVec);
 // For FBOW, the method name or signature may be different
 
             pKFi->mPlaceRecognitionScore=si;
@@ -765,7 +764,7 @@ vector<KeyFrame*> KeyFrameDatabase::DetectRelocalizationCandidates(Frame *F, Map
     {
         unique_lock<mutex> lock(mMutex);
 
-        for(DBoW2::BowVector::const_iterator vit=F->mBowVec.begin(), vend=F->mBowVec.end(); vit != vend; vit++)
+        for(fbow::BoWVector::const_iterator vit=F->mBowVec.begin(), vend=F->mBowVec.end(); vit != vend; vit++)
         {
             list<KeyFrame*> &lKFs =   mvInvertedFile[vit->first];
 
@@ -807,7 +806,8 @@ vector<KeyFrame*> KeyFrameDatabase::DetectRelocalizationCandidates(Frame *F, Map
         if(pKFi->mnRelocWords>minCommonWords)
         {
             nscores++;
-            float si = mpVoc->score(F->mBowVec,pKFi->mBowVec);
+            // float si = mpVoc->score(F->mBowVec,pKFi->mBowVec);
+            float si = score(F->mBowVec,pKFi->mBowVec);
             pKFi->mRelocScore=si;
             lScoreAndMatch.push_back(make_pair(si,pKFi));
         }

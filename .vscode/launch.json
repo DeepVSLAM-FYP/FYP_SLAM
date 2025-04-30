@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/Examples/ORB/monoORB_euroc",
             "args": [
-                "${workspaceFolder}/Vocabulary/ORBvoc.txt",
+                "${workspaceFolder}/Vocabulary/orb_mur.fbow",
                 "${workspaceFolder}/ORBSLAM3/Examples/Monocular/EuRoC.yaml",
                 "${workspaceFolder}/datasets/MH01",
                 "${workspaceFolder}/ORBSLAM3/Examples/Monocular/EuRoC_TimeStamps/MH01.txt",
@@ -21,6 +21,7 @@
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",
+            "preLaunchTask": "Build ORB SLAM",
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",
@@ -51,6 +52,7 @@
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",
+            "preLaunchTask": "Build SuperPoint SLAM",
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",
@@ -85,6 +87,7 @@
             ],
             "externalConsole": false,
             "MIMode": "gdb",
+            "preLaunchTask": "Build XFeat SLAM",
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",
@@ -130,6 +133,7 @@
             ],
             "externalConsole": false,
             "MIMode": "gdb",
+            "preLaunchTask": "Build XFeat SLAM",
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",

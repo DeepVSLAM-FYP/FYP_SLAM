@@ -21,6 +21,7 @@
 
 #include <boost/serialization/serialization.hpp>
 #include <boost/serialization/vector.hpp>
+#include <boost/serialization/map.hpp>
 
 #include <sophus/se3.hpp>
 #include <Eigen/Core>
@@ -29,6 +30,38 @@
 #include <opencv2/features2d/features2d.hpp>
 
 #include <vector>
+#include <fbow/bow_vector.h>
+#include <fbow/bow_feat_vector.h>
+
+// Non-intrusive serialization support for fbow classes
+namespace boost {
+namespace serialization {
+
+// Serialization for fbow::_float
+template<class Archive>
+void serialize(Archive & ar, fbow::_float & f, const unsigned int version)
+{
+    ar & f.var;
+}
+
+// Serialization for fbow::BoWVector
+template<class Archive>
+void serialize(Archive & ar, fbow::BoWVector & bowVec, const unsigned int version)
+{
+    // Use existing map serialization since BoWVector is a std::map
+    ar & static_cast<std::map<uint32_t, fbow::_float>&>(bowVec);
+}
+
+// Serialization for fbow::BoWFeatVector
+template<class Archive>
+void serialize(Archive & ar, fbow::BoWFeatVector & bowFeatVec, const unsigned int version)
+{
+    // Use existing map serialization since BoWFeatVector is a std::map
+    ar & static_cast<std::map<uint32_t, std::vector<uint32_t>>&>(bowFeatVec);
+}
+
+} // namespace serialization
+} // namespace boost
 
 namespace ORB_SLAM3
 {

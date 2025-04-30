@@ -21,10 +21,9 @@
 #define KEYFRAME_H
 
 #include "MapPoint.h"
-#include "Thirdparty/DBoW2/DBoW2/BowVector.h"
-#include "Thirdparty/DBoW2/DBoW2/FeatureVector.h"
-// TODO: Replace DBoW2 includes with FBOW include
-// TODO: Add: #include "Thirdparty/fbow/include/fbow.h"
+// #include "Thirdparty/DBoW2/DBoW2/BowVector.h"
+// #include "Thirdparty/DBoW2/DBoW2/FeatureVector.h"
+#include "Thirdparty/FBOW/include/fbow/fbow.h"
 
 #include "ORBVocabulary.h"
 #include "ORBextractor.h"
@@ -218,14 +217,12 @@ public:
     bool isVelocitySet();
 
     // Bag of Words Vector structures.
-    // TODO: Replace DBoW2 vectors with FBOW equivalents
     // DBoW2::BowVector mBowVec;
     // DBoW2::FeatureVector mFeatVec;
-    // TODO: Change to: 
+
     // fbow::BoWVector mBowVec;
     // fbow::BoWFeatVector mFeatVec;
 
-    // TODO: Update ComputeBoW() method implementation in KeyFrame.cc 
     // to use FBOW's API for computing BoW vectors
     void ComputeBoW();
 
@@ -256,7 +253,7 @@ public:
 
     // Merge Edges
     void AddMergeEdge(KeyFrame* pKF);
-    set<KeyFrame*> GetMergeEdges();
+    std::set<KeyFrame*> GetMergeEdges();
 
     // MapPoint observation functions
     int GetNumberMPs();
@@ -308,8 +305,8 @@ public:
     bool ProjectPointDistort(MapPoint* pMP, cv::Point2f &kp, float &u, float &v);
     bool ProjectPointUnDistort(MapPoint* pMP, cv::Point2f &kp, float &u, float &v);
 
-    void PreSave(set<KeyFrame*>& spKF,set<MapPoint*>& spMP, set<GeometricCamera*>& spCam);
-    void PostLoad(map<long unsigned int, KeyFrame*>& mpKFid, map<long unsigned int, MapPoint*>& mpMPid, map<unsigned int, GeometricCamera*>& mpCamId);
+    void PreSave(std::set<KeyFrame*>& spKF,std::set<MapPoint*>& spMP, std::set<GeometricCamera*>& spCam);
+    void PostLoad(std::map<long unsigned int, KeyFrame*>& mpKFid, std::map<long unsigned int, MapPoint*>& mpMPid, std::map<unsigned int, GeometricCamera*>& mpCamId);
 
 
     void SetORBVocabulary(ORBVocabulary* pORBVoc);
@@ -397,8 +394,10 @@ public:
     const cv::Mat mDescriptors;
 
     //BoW
-    DBoW2::BowVector mBowVec;
-    DBoW2::FeatureVector mFeatVec;
+    // DBoW2::BowVector mBowVec;
+    // DBoW2::FeatureVector mFeatVec;
+    fbow::BoWVector mBowVec;
+    fbow::BoWFeatVector mFeatVec;
 
     // Pose relative to parent (this is computed when bad flag is activated)
     Sophus::SE3f mTcp;
@@ -426,7 +425,7 @@ public:
 
     unsigned int mnOriginMapId;
 
-    string mNameFile;
+    std::string mNameFile;
 
     int mnDataset;
 
@@ -545,7 +544,7 @@ public:
                 else right++;
             }
         }
-        cout << "Point distribution in KeyFrame: left-> " << left << " --- right-> " << right << endl;
+        std::cout << "Point distribution in KeyFrame: left-> " << left << " --- right-> " << right << std::endl;
     }
 
 

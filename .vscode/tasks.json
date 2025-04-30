@@ -3,14 +3,84 @@
 	"tasks": [
 		{
 			"type": "cmake",
-			"label": "CMake: configure",
+			"label": "CMake: Configure",
 			"command": "configure",
 			"problemMatcher": [],
 			"detail": "CMake template configure task",
+			"group": "build"
+		},
+		{
+			"type": "cmake",
+			"label": "CMake: Build",
+			"command": "build",
+			"targets": [
+				"all"
+			],
 			"group": {
 				"kind": "build",
 				"isDefault": true
-			}
+			},
+			"problemMatcher": "$gcc"
+		},
+		{
+			"label": "Clean Build Directory",
+			"type": "shell",
+			"command": "rm -rf ${workspaceFolder}/build/*",
+			"problemMatcher": [],
+			"detail": "Cleans all files in the build directory"
+		},
+		{
+			"label": "Rebuild All",
+			"type": "shell",
+			"command": "echo \"Starting complete rebuild...\"",
+			"dependsOrder": "sequence",
+			"dependsOn": ["Clean Build Directory", "CMake: Configure", "CMake: Build"],
+			"group": "build",
+			"problemMatcher": [],
+			"detail": "Cleans the build directory and performs a complete rebuild"
+		},
+		{
+			"label": "Build ORB SLAM",
+			"type": "cmake",
+			"command": "build",
+			"targets": [
+				"monoORB_euroc"
+			],
+			"group": "build",
+			"problemMatcher": "$gcc",
+			"detail": "Builds only the ORB SLAM monocular executable"
+		},
+		{
+			"label": "Build XFeat SLAM",
+			"type": "shell",
+			"command": "cd ${workspaceFolder}/XFeatSLAM/build && make -j$(nproc)",
+			"group": "build",
+			"problemMatcher": "$gcc",
+			"detail": "Builds only the XFeat SLAM monocular executable"
+		},
+		{
+			"label": "Run ORB SLAM",
+			"type": "shell",
+			"command": "${workspaceFolder}/Examples/ORB/monoORB_euroc ${workspaceFolder}/Vocabulary/orb_mur.fbow ${workspaceFolder}/ORBSLAM3/Examples/Monocular/EuRoC.yaml ${workspaceFolder}/datasets/MH01 ${workspaceFolder}/ORBSLAM3/Examples/Monocular/EuRoC_TimeStamps/MH01.txt ${workspaceFolder}/Trajectories/ORB/MH01/",
+			"dependsOn": ["Build ORB SLAM"],
+			"problemMatcher": [],
+			"detail": "Builds and runs the ORB SLAM on MH01 dataset"
+		},
+		{
+			"label": "Run XFeat SLAM",
+			"type": "shell",
+			"command": "${workspaceFolder}/Examples/XF/mono_euroc ${workspaceFolder}/Vocabulary/ORBvoc.txt ${workspaceFolder}/XFeatSLAM/examples/Monocular/EuRoC.yaml ${workspaceFolder}/datasets/MH01 ${workspaceFolder}/XFeatSLAM/examples/Monocular/EuRoC_TimeStamps/MH01.txt",
+			"dependsOn": ["Build XFeat SLAM"],
+			"problemMatcher": [],
+			"detail": "Builds and runs the XFeat SLAM on MH01 dataset"
+		},
+		{
+			"label": "Run XFeat with ORB Features",
+			"type": "shell",
+			"command": "export USE_ORB=1 && ${workspaceFolder}/Examples/XF/mono_euroc ${workspaceFolder}/Vocabulary/ORBvoc.txt ${workspaceFolder}/XFeatSLAM/examples/Monocular/EuRoC.yaml ${workspaceFolder}/datasets/MH01 ${workspaceFolder}/XFeatSLAM/examples/Monocular/EuRoC_TimeStamps/MH01.txt",
+			"dependsOn": ["Build XFeat SLAM"],
+			"problemMatcher": [],
+			"detail": "Builds and runs the XFeat SLAM with ORB features on MH01 dataset"
 		}
 	]
 }

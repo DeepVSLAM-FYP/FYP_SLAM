@@ -20,18 +20,17 @@
 #ifndef ORBVOCABULARY_H
 #define ORBVOCABULARY_H
 
-// TODO: Replace DBoW2 includes with FBOW include
-#include"Thirdparty/DBoW2/DBoW2/FORB.h"
-#include"Thirdparty/DBoW2/DBoW2/TemplatedVocabulary.h"
-// TODO: Add FBOW include: #include "Thirdparty/fbow/include/fbow.h"
+#include "Thirdparty/FBOW/include/fbow/fbow.h"
 
 namespace ORB_SLAM3
 {
 
-// TODO: Replace DBoW2 TemplatedVocabulary with FBOW Vocabulary
-typedef DBoW2::TemplatedVocabulary<DBoW2::FORB::TDescriptor, DBoW2::FORB>
-  ORBVocabulary;
-// TODO: Change to: typedef fbow::Vocabulary ORBVocabulary;
+// typedef DBoW2::TemplatedVocabulary<DBoW2::FORB::TDescriptor, DBoW2::FORB>
+//   ORBVocabulary;
+using ORBVocabulary = fbow::Vocabulary;
+inline static float score(const fbow::BoWVector& a,const fbow::BoWVector& b) 
+{ return fbow::BoWVector::score(a,b); }
+
 
 } //namespace ORB_SLAM
 

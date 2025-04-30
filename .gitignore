@@ -33,7 +33,7 @@ Thirdparty/**/*.so
 Thirdparty/**/*.a
 Thirdparty/**/*.dylib
 Thirdparty/**/*.dll
-
+Thirdparty/.FBOW*
 /Examples/
 
 Trajectories/
