@@ -33,7 +33,7 @@
 #include <string>
 
 namespace ORB_SLAM3 {
-
+    using namespace std;
     class System;
 
     //TODO: change to double instead of float

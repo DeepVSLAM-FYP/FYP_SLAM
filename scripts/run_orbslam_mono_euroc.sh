@@ -8,8 +8,9 @@ DATASET="MH01"
 
 # Execute the monocular ORB-SLAM3 with EuRoC dataset
 # cd "$(dirname "$0")/.."
+# ../Vocabulary/ORBvoc.txt \
 ./../Examples/ORB/monoORB_euroc \
-    ../Vocabulary/ORBvoc.txt \
+    ../Vocabulary/orb_mur.fbow \
     ../ORBSLAM3/Examples/Monocular/EuRoC.yaml \
     ../datasets/${DATASET} \
     ../ORBSLAM3/Examples/Monocular/EuRoC_TimeStamps/${DATASET}.txt \

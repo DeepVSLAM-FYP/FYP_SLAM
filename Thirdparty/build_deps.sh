@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Script to build all third-party dependencies for FYP_SLAM
-# Builds: DBOW2, Eigen, g2o, Pangolin, OpenCV, Sophus
+# Builds: DBOW2, DBoW3, FBOW, Eigen, g2o, Pangolin, OpenCV, Sophus
 
 set -e  # Exit immediately if a command exits with a non-zero status
 
@@ -43,6 +43,8 @@ log "Starting build process for all dependencies"
 
 # Build each dependency
 build_dependency "DBoW2" "DBoW2"
+build_dependency "DBoW3" "DBoW3" 
+build_dependency "FBOW" "FBOW"
 build_dependency "Eigen" "eigen-3.4.0"
 build_dependency "g2o" "g2o"
 build_dependency "Pangolin" "Pangolin-0.6"

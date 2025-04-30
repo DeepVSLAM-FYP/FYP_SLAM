@@ -21,12 +21,14 @@
 
 #include <vector>
 #include <cmath>
+#include <random>
 #include <opencv2/core/core.hpp>
 
 #include "KeyFrame.h"
 #include "ORBmatcher.h"
 
-#include "Thirdparty/DBoW2/DUtils/Random.h"
+// #include "Thirdparty/DBoW2/DUtils/Random.h"
+#include "Thirdparty/FBOW/include/fbow/fbow.h"
 
 namespace ORB_SLAM3
 {
@@ -163,6 +165,10 @@ Eigen::Matrix4f Sim3Solver::iterate(int nIterations, bool &bNoMore, vector<bool>
     Eigen::Matrix3f P3Dc1i;
     Eigen::Matrix3f P3Dc2i;
 
+    // Setup random number generator
+    std::mt19937 gen;
+    std::uniform_int_distribution<> dist;
+
     int nCurrentIterations = 0;
     while(mnIterations<mRansacMaxIts && nCurrentIterations<nIterations)
     {
@@ -174,7 +180,8 @@ Eigen::Matrix4f Sim3Solver::iterate(int nIterations, bool &bNoMore, vector<bool>
         // Get min set of points
         for(short i = 0; i < 3; ++i)
         {
-            int randi = DUtils::Random::RandomInt(0, vAvailableIndices.size()-1);
+            // Replace DUtils::Random::RandomInt with std::uniform_int_distribution
+            int randi = dist(gen) % vAvailableIndices.size();
 
             int idx = vAvailableIndices[randi];
 
@@ -244,10 +251,15 @@ Eigen::Matrix4f Sim3Solver::iterate(int nIterations, bool &bNoMore, vector<bool>
 
         vAvailableIndices = mvAllIndices;
 
+        // Setup random number generator
+        std::mt19937 gen;
+        std::uniform_int_distribution<> dist;
+
         // Get min set of points
         for(short i = 0; i < 3; ++i)
         {
-            int randi = DUtils::Random::RandomInt(0, vAvailableIndices.size()-1);
+            // Replace DUtils::Random::RandomInt with std::uniform_int_distribution
+            int randi = dist(gen) % vAvailableIndices.size();
 
             int idx = vAvailableIndices[randi];
 

@@ -49,6 +49,7 @@
 #include "MLPnPsolver.h"
 
 #include <Eigen/Sparse>
+#include <random>
 
 
 namespace ORB_SLAM3 {
@@ -116,20 +117,24 @@ namespace ORB_SLAM3 {
 	    {
 	        nCurrentIterations++;
 	        mnIterations++;
+            vAvailableIndices = mvAllIndices;
 
-	        vAvailableIndices = mvAllIndices;
+            // Setup random number generator
+            std::mt19937 gen;
+            std::uniform_int_distribution<> dist;
 
             //Bearing vectors and 3D points used for this ransac iteration
             bearingVectors_t bearingVecs(mRansacMinSet);
             points_t p3DS(mRansacMinSet);
             vector<int> indexes(mRansacMinSet);
 
-	        // Get min set of points
-	        for(short i = 0; i < mRansacMinSet; ++i)
-	        {
-	            int randi = DUtils::Random::RandomInt(0, vAvailableIndices.size()-1);
+            // Get min set of points
+            for(short i = 0; i < mRansacMinSet; ++i)
+            {
+                // Replace DUtils::Random::RandomInt with std::uniform_int_distribution
+                int randi = dist(gen) % vAvailableIndices.size();
 
-	            int idx = vAvailableIndices[randi];
+                int idx = vAvailableIndices[randi];
 
                 bearingVecs[i] = mvBearingVecs[idx];
                 p3DS[i] = mvP3Dw[idx];
@@ -493,7 +498,7 @@ namespace ORB_SLAM3 {
                 // r31
                 A(2 * i, 6) = nullspaces[i](2, 0) * pt3_current[0];
                 A(2 * i + 1, 6) = nullspaces[i](2, 1) * pt3_current[0];
-                // r32
+               
                 A(2 * i, 7) = nullspaces[i](2, 0) * pt3_current[1];
                 A(2 * i + 1, 7) = nullspaces[i](2, 1) * pt3_current[1];
                 // r33
