@@ -1861,10 +1861,13 @@ FeatureExtractor* Tracking::CreateFeatureExtractor(
     int nFeatures, float scaleFactor, int nLevels, 
     int iniThFAST, int minThFAST, const std::string& type) 
 {
+    // Set the global feature extractor type
+    GlobalFeatureExtractorInfo::SetFeatureExtractorType(type);
+    
     if (type == "ORB" || type.empty()) {
         return new ORBextractor(nFeatures, scaleFactor, nLevels, iniThFAST, minThFAST);
     }else if (type == "SIFT") {
-        throw std::runtime_error("SIFT extractor not implemented");
+        return new SIFTextractor(nFeatures);
     }else if (type == "SP DPU") {
         throw std::runtime_error("SP DPU extractor not implemented");
     }else if (type == "XFEAT") {

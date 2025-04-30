@@ -36,6 +36,7 @@
 #include "System.h"
 #include "ImuTypes.h"
 #include "Settings.h"
+#include "GlobalFeatureExtractorType.h"
 
 #include "GeometricCamera.h"
 
@@ -114,6 +115,10 @@ public:
     void Release();
     bool stopRequested();
 #endif
+
+    // Factory method to create feature extractors based on type
+    FeatureExtractor* CreateFeatureExtractor(int nFeatures, float scaleFactor, int nLevels, 
+                                          int iniThFAST, int minThFAST, const std::string& type);
 
 public:
 

@@ -328,77 +328,89 @@ float MapPoint::GetFoundRatio()
 
 void MapPoint::ComputeDistinctiveDescriptors()
 {
-    // Retrieve all observed descriptors
-    vector<cv::Mat> vDescriptors;
-
-    map<KeyFrame*,tuple<int,int>> observations;
-
+    // 1. Gather all valid observed descriptors
+    std::vector<cv::Mat> vDescriptors;
+    std::map<KeyFrame*, std::tuple<int,int>> observations;
     {
-        unique_lock<mutex> lock1(mMutexFeatures);
-        if(mbBad)
-            return;
-        observations=mObservations;
+        std::unique_lock<std::mutex> lock(mMutexFeatures);
+        if(mbBad) return;
+        observations = mObservations;
     }
+    if(observations.empty()) return;
 
-    if(observations.empty())
-        return;
-
-    vDescriptors.reserve(observations.size());
-
-    for(map<KeyFrame*,tuple<int,int>>::iterator mit=observations.begin(), mend=observations.end(); mit!=mend; mit++)
+    vDescriptors.reserve(observations.size()*2);
+    for(auto& it : observations)
     {
-        KeyFrame* pKF = mit->first;
-
-        if(!pKF->isBad()){
-            tuple<int,int> indexes = mit -> second;
-            int leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
-
-            if(leftIndex != -1){
-                vDescriptors.push_back(pKF->mDescriptors.row(leftIndex));
-            }
-            if(rightIndex != -1){
-                vDescriptors.push_back(pKF->mDescriptors.row(rightIndex));
-            }
-        }
+        KeyFrame* pKF = it.first;
+        if(pKF->isBad()) continue;
+        int idxL = std::get<0>(it.second);
+        int idxR = std::get<1>(it.second);
+        if(idxL >= 0) vDescriptors.push_back(pKF->mDescriptors.row(idxL));
+        if(idxR >= 0) vDescriptors.push_back(pKF->mDescriptors.row(idxR));
     }
+    if(vDescriptors.empty()) return;
 
-    if(vDescriptors.empty())
-        return;
-
-    // Compute distances between them
+    // 2. Compute pairwise distances
     const size_t N = vDescriptors.size();
-
-    float Distances[N][N];
-    for(size_t i=0;i<N;i++)
+    // We'll store distances in a flat 2D array
+    std::vector<float> distMat(N*N, 0.0f);
+    for(size_t i = 0; i < N; ++i)
     {
-        Distances[i][i]=0;
-        for(size_t j=i+1;j<N;j++)
+        for(size_t j = i+1; j < N; ++j)
         {
-            int distij = ORBmatcher::DescriptorDistance(vDescriptors[i],vDescriptors[j]);
-            Distances[i][j]=distij;
-            Distances[j][i]=distij;
+            float d;
+            if(vDescriptors[i].type() == CV_8U)
+            {
+                // Hamming distance via ORBmatcher
+                d = static_cast<float>(
+                  ORBmatcher::DescriptorDistance(vDescriptors[i],
+                                                 vDescriptors[j]));
+            }
+            else
+            {
+                // Squared L2 distance for float descriptors
+                d = static_cast<float>(
+                  cv::norm(vDescriptors[i],
+                           vDescriptors[j],
+                           cv::NORM_L2SQR));  // no sqrt :contentReference[oaicite:0]{index=0}
+            }
+            distMat[i*N + j] = distMat[j*N + i] = d;
         }
     }
 
-    // Take the descriptor with least median distance to the rest
-    int BestMedian = INT_MAX;
-    int BestIdx = 0;
-    for(size_t i=0;i<N;i++)
+    // 3. Select the “most central” descriptor
+    int bestIdx    = 0;
+    float bestCost = FLT_MAX;
+    for(size_t i = 0; i < N; ++i)
     {
-        vector<int> vDists(Distances[i],Distances[i]+N);
-        sort(vDists.begin(),vDists.end());
-        int median = vDists[0.5*(N-1)];
+        // Gather distances from i to all others
+        std::vector<float> dists;
+        dists.reserve(N);
+        for(size_t j = 0; j < N; ++j)
+            dists.push_back(distMat[i*N + j]);
 
-        if(median<BestMedian)
+        if(vDescriptors[0].type() == CV_8U)
         {
-            BestMedian = median;
-            BestIdx = i;
+            // ORB: pick by median distance (Hamming) :contentReference[oaicite:1]{index=1}
+            std::nth_element(dists.begin(),
+                             dists.begin() + N/2,
+                             dists.end());
+            float med = dists[N/2];
+            if(med < bestCost) { bestCost = med; bestIdx = i; }
+        }
+        else
+        {
+            // SIFT/float: pick by sum of L2 distances
+            float sum = 0;
+            for(float dv : dists) sum += dv;
+            if(sum < bestCost) { bestCost = sum; bestIdx = i; }
         }
     }
 
+    // 4. Store the chosen descriptor
     {
-        unique_lock<mutex> lock(mMutexFeatures);
-        mDescriptor = vDescriptors[BestIdx].clone();
+        std::unique_lock<std::mutex> lock(mMutexFeatures);
+        mDescriptor = vDescriptors[bestIdx].clone();
     }
 }
 

@@ -36,7 +36,7 @@ endif()
 # TODO: make the dep libraries to install .cmake files in the same directory and uncomment the following line
 # LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_ROOT_DIR}/cmake_modules)
 
-set(OpenCV_DIR "${PROJECT_ROOT_DIR}/Thirdparty/libs/lib/cmake/opencv4")
+# set(OpenCV_DIR "${PROJECT_ROOT_DIR}/Thirdparty/libs/lib/cmake/opencv4")
 find_package(OpenCV 4.1)
    if(NOT OpenCV_FOUND)
       message(FATAL_ERROR "OpenCV > 4.4 not found.")
@@ -79,6 +79,7 @@ set(COMMON_LIBRARIES
 
 add_library(Feature_Extractors SHARED
     src/FeatureExtractors/ORBextractor.cc
+    src/FeatureExtractors/SIFTextractor.cc
 )
 
 target_link_libraries( Feature_Extractors
@@ -111,6 +112,7 @@ add_library(${PROJECT_NAME} SHARED
     # Feature Module
 #     src/ORBextractor.cc
     src/ORBmatcher.cc
+    src/GlobalFeatureExtractorType.cc
     
     # Optimization Module
     src/Optimizer.cc

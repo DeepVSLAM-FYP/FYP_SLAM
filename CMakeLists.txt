@@ -3,7 +3,7 @@ project(SLAM_Systems)
 
 # Set default build type to Release
 if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Release)
+  set(CMAKE_BUILD_TYPE Debug)
 endif()
 message("Build type: " ${CMAKE_BUILD_TYPE})
 
