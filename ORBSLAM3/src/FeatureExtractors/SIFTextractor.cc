@@ -1,5 +1,6 @@
 #include "FeatureExtractors/SIFTextractor.h"
 #include <opencv2/imgproc.hpp>
+#include <iostream>
 
 namespace ORB_SLAM3 {
 
@@ -15,17 +16,36 @@ int SIFTextractor::operator()(const cv::Mat& image, cv::InputArray mask,
                               cv::Mat& desc,
                               std::vector<int>& vLap) {
     // 1) Detect and compute SIFT descriptors at original resolution
-    sift_->detectAndCompute(image, mask, kps, desc);
+    // 1) Detect all keypoints
+    std::vector<cv::KeyPoint> allKeypoints;
+    sift_->detect(image, allKeypoints, mask);
 
-    // 2) Force every keypoint to octave = 0
-    for (auto &kp : kps) {
-        kp.octave = 0;
+    // Filter to keep only octave 0 keypoints
+    kps.clear();
+
+    int nKeypoints = allKeypoints.size();
+    
+    if(std::getenv("DEBUG_FEAT") != nullptr && strcmp(std::getenv("DEBUG_FEAT"), "1") == 0) 
+    {
+            std::cout << "nKeypoints: " << nKeypoints << std::endl;
     }
 
-    // 3) No laplacian area for SIFT—clear it
+    for (int i = 0; i < nKeypoints; ++i) {
+        auto& kp = allKeypoints[i];
+        int octave = kp.octave & 255;  // lower byte = octave index
+        if (octave == 0){
+        kp.octave = 0;  // set octave to 0 for all 
+        kps.push_back(kp);
+        }
+        
+    }
+
+    // Compute descriptors only for octave 0 keypoints
+    sift_->compute(image, kps, desc);
+
     vLap.clear();
 
-    // 4) Build a single‐level pyramid so downstream stereo code can use pyr_[0]
+    // 4) Build a single‐level pyramid
     pyr_.resize(1);
     pyr_[0] = image;
 

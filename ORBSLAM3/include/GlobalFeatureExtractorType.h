@@ -14,6 +14,12 @@ public:
     
     // Set the current feature extractor type (thread-safe)
     static void SetFeatureExtractorType(const std::string& type);
+    
+    // Get and set the threshold values (thread-safe)
+    static float GetTH_HIGH();
+    static float GetTH_LOW();
+    static void SetTH_HIGH(float th_high);
+    static void SetTH_LOW(float th_low);
 
 private:
     // The singleton instance
@@ -24,6 +30,10 @@ private:
     
     // The actual feature extractor type
     std::string featureExtractorType_ = "ORB";
+    
+    // Descriptor matching threshold values
+    float th_high_ = 100;  // Default value matching original code
+    float th_low_ = 50;    // Default value matching original code
     
     // Mutex for thread safety
     std::mutex mutex_;

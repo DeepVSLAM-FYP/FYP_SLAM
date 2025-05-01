@@ -42,7 +42,7 @@ namespace ORB_SLAM3
         ORBmatcher(float nnratio=0.6, bool checkOri=true);
 
         // Computes the Hamming distance between two ORB descriptors
-        static int DescriptorDistance(const cv::Mat &a, const cv::Mat &b);
+        static float DescriptorDistance(const cv::Mat &a, const cv::Mat &b);
 
         // Search matches between Frame keypoints and projected MapPoints. Returns number of matches
         // Used to track the local map (Tracking)
@@ -90,9 +90,14 @@ namespace ORB_SLAM3
 
     public:
 
-        static const int TH_LOW;
-        static const int TH_HIGH;
+        // static const int TH_LOW;
+        // static const int TH_HIGH;
         static const int HISTO_LENGTH;
+        
+        // Instance variables for threshold values
+        float TH_LOW;
+        float TH_HIGH;
+        
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     protected:

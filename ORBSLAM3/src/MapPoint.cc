@@ -362,23 +362,22 @@ void MapPoint::ComputeDistinctiveDescriptors()
             if(vDescriptors[i].type() == CV_8U)
             {
                 // Hamming distance via ORBmatcher
-                d = static_cast<float>(
-                  ORBmatcher::DescriptorDistance(vDescriptors[i],
-                                                 vDescriptors[j]));
+                d = ORBmatcher::DescriptorDistance(vDescriptors[i],
+                                                 vDescriptors[j]);
             }
             else
             {
                 // Squared L2 distance for float descriptors
-                d = static_cast<float>(
-                  cv::norm(vDescriptors[i],
+                d = cv::norm(vDescriptors[i],
                            vDescriptors[j],
-                           cv::NORM_L2SQR));  // no sqrt :contentReference[oaicite:0]{index=0}
+                           cv::NORM_L2SQR);  // no sqrt :contentReference[oaicite:0]{index=0}
+                // d = ORBmatcher::DescriptorDistance(vDescriptors[i], vDescriptors[j]);
             }
             distMat[i*N + j] = distMat[j*N + i] = d;
         }
     }
 
-    // 3. Select the “most central” descriptor
+    // 3. Select the "most central" descriptor
     int bestIdx    = 0;
     float bestCost = FLT_MAX;
     for(size_t i = 0; i < N; ++i)
@@ -391,7 +390,7 @@ void MapPoint::ComputeDistinctiveDescriptors()
 
         if(vDescriptors[0].type() == CV_8U)
         {
-            // ORB: pick by median distance (Hamming) :contentReference[oaicite:1]{index=1}
+            // ORB: pick by median distance (Hamming)
             std::nth_element(dists.begin(),
                              dists.begin() + N/2,
                              dists.end());

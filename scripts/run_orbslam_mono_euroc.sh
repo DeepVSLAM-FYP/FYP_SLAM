@@ -4,13 +4,17 @@
 # Based on Mono_EuroC configuration from launch.json
 
 # Set dataset variable - replace MH01 with desired sequence if needed
-DATASET="MH01"
+DATASET="V101"
 
 # Execute the monocular ORB-SLAM3 with EuRoC dataset
 # cd "$(dirname "$0")/.."
 # ../Vocabulary/ORBvoc.txt \
+#    ../Vocabulary/orb_mur.fbow \
+# 
+export DEBUG_SLAM=1
+
 ./../Examples/ORB/monoORB_euroc \
-    ../Vocabulary/orb_mur.fbow \
+    ../Vocabulary/lvl0_bovisa_siftvoc.fbow \
     ../ORBSLAM3/Examples/Monocular/EuRoC.yaml \
     ../datasets/${DATASET} \
     ../ORBSLAM3/Examples/Monocular/EuRoC_TimeStamps/${DATASET}.txt \

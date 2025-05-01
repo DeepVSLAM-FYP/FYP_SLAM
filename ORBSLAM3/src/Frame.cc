@@ -285,7 +285,7 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeSt
     AssignFeaturesToGrid();
 }
 
-
+//This constructor is used for monocular cameras - MONOCULAR
 Frame::Frame(const cv::Mat &imGray, const double &timeStamp, FeatureExtractor* extractor,ORBVocabulary* voc, GeometricCamera* pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth, Frame* pPrevF, const IMU::Calib &ImuCalib)
     :mpcpi(NULL),mpORBvocabulary(voc),mpORBextractorLeft(extractor),mpORBextractorRight(static_cast<FeatureExtractor*>(NULL)),
      mTimeStamp(timeStamp), mK(static_cast<Pinhole*>(pCamera)->toK()), mK_(static_cast<Pinhole*>(pCamera)->toK_()), mDistCoef(distCoef.clone()), mbf(bf), mThDepth(thDepth),
@@ -418,8 +418,14 @@ void Frame::AssignFeaturesToGrid()
 void Frame::ExtractORB(int flag, const cv::Mat &im, const int x0, const int x1)
 {
     vector<int> vLapping = {x0,x1};
-    if(flag==0)
+    if(flag==0){
         monoLeft = (*mpORBextractorLeft)(im,cv::Mat(),mvKeys,mDescriptors,vLapping);
+        // Check if DEBUG_SLAM environment variable is set
+        if(std::getenv("DEBUG_SLAM") != nullptr)
+        {
+            std::cout << "Frame: "<< this->mnId << " | # of features detected: " << monoLeft << std::endl;
+        }
+    }
     else
         monoRight = (*mpORBextractorRight)(im,cv::Mat(),mvKeysRight,mDescriptorsRight,vLapping);
 }
@@ -812,8 +818,8 @@ void Frame::ComputeStereoMatches()
 {
     mvuRight = vector<float>(N,-1.0f);
     mvDepth = vector<float>(N,-1.0f);
-
-    const int thOrbDist = (ORBmatcher::TH_HIGH+ORBmatcher::TH_LOW)/2;
+    //correct here
+    const float thOrbDist = (GlobalFeatureExtractorInfo::GetTH_HIGH()+GlobalFeatureExtractorInfo::GetTH_LOW())/2;
 
     const int nRows = mpORBextractorLeft->GetImagePyramid()[0].rows;
 
@@ -843,7 +849,7 @@ void Frame::ComputeStereoMatches()
     const float maxD = mbf/minZ;
 
     // For each left keypoint search a match in the right image
-    vector<pair<int, int> > vDistIdx;
+    vector<pair<float, int> > vDistIdx;
     vDistIdx.reserve(N);
 
     for(int iL=0; iL<N; iL++)
@@ -864,7 +870,7 @@ void Frame::ComputeStereoMatches()
         if(maxU<0)
             continue;
 
-        int bestDist = ORBmatcher::TH_HIGH;
+        float bestDist = GlobalFeatureExtractorInfo::GetTH_HIGH();
         size_t bestIdxR = 0;
 
         const cv::Mat &dL = mDescriptors.row(iL);
@@ -883,7 +889,7 @@ void Frame::ComputeStereoMatches()
             if(uR>=minU && uR<=maxU)
             {
                 const cv::Mat &dR = mDescriptorsRight.row(iR);
-                const int dist = ORBmatcher::DescriptorDistance(dL,dR);
+                const float dist = ORBmatcher::DescriptorDistance(dL,dR);
 
                 if(dist<bestDist)
                 {
@@ -959,7 +965,7 @@ void Frame::ComputeStereoMatches()
                 }
                 mvDepth[iL]=mbf/disparity;
                 mvuRight[iL] = bestuR;
-                vDistIdx.push_back(pair<int,int>(bestDist,iL));
+                vDistIdx.push_back(pair<float,int>(bestDist,iL));
             }
         }
     }
@@ -979,7 +985,6 @@ void Frame::ComputeStereoMatches()
         }
     }
 }
-
 
 void Frame::ComputeStereoFromRGBD(const cv::Mat &imDepth)
 {

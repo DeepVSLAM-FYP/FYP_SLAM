@@ -48,6 +48,7 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     mpFrameDrawer(pFrameDrawer), mpMapDrawer(pMapDrawer), mpAtlas(pAtlas), mnLastRelocFrameId(0), time_recently_lost(5.0),
     mnInitialFrameId(0), mbCreatedMap(false), mnFirstFrameId(0), mpCamera2(nullptr), mpLastKeyFrame(static_cast<KeyFrame*>(NULL))
 {
+    this->strSettingPath = strSettingPath;
     // Load camera parameters from settings file
     if(settings){
         newParameterLoader(settings);
@@ -1864,9 +1865,33 @@ FeatureExtractor* Tracking::CreateFeatureExtractor(
     // Set the global feature extractor type
     GlobalFeatureExtractorInfo::SetFeatureExtractorType(type);
     
+    // Read matcher threshold parameters from the configuration file
+    cv::FileStorage fSettings(this->strSettingPath, cv::FileStorage::READ);
+    int th_high = 100;  // Default value
+    int th_low = 50;    // Default value
+    
+    cv::FileNode node = fSettings["Matcher.TH_HIGH"];
+    if(!node.empty() && node.isReal()) {
+        th_high = node.real();
+    }
+    
+    node = fSettings["Matcher.TH_LOW"];
+    if(!node.empty() && node.isReal()) {
+        th_low = node.real();
+    }
+    
+    // Store values in global feature extractor info
+    GlobalFeatureExtractorInfo::SetTH_HIGH(th_high);
+    GlobalFeatureExtractorInfo::SetTH_LOW(th_low);
+    
+    std::cout << "- Matcher TH_HIGH: " << th_high << std::endl;
+    std::cout << "- Matcher TH_LOW: " << th_low << std::endl;
+
     if (type == "ORB" || type.empty()) {
+        std::cout << "Feature extractor type: ORB | nFeatures: " << nFeatures << std::endl;
         return new ORBextractor(nFeatures, scaleFactor, nLevels, iniThFAST, minThFAST);
     }else if (type == "SIFT") {
+        std::cout << "Feature extractor type: SIFT | nFeatures: " << nFeatures << std::endl;
         return new SIFTextractor(nFeatures);
     }else if (type == "SP DPU") {
         throw std::runtime_error("SP DPU extractor not implemented");
@@ -1912,6 +1937,22 @@ void Tracking::Track()
             unique_lock<mutex> lock(mMutexImuQueue);
             mlQueueImuData.clear();
             CreateMapInAtlas();
+            
+            // ---- DEBUG block (end of Track()) ---------------------------------
+            if (std::getenv("DEBUG_TrackT") != nullptr &&
+                strcmp(std::getenv("DEBUG_Track"), "1") == 0)
+            {
+                std::cout << "\n[DEBUG][Track] BEGIN ---------\n";
+                std::cout << " FrameID             : " << mCurrentFrame.mnId              << '\n';
+                std::cout << " Sensor state        : " << mState                           << '\n';
+                std::cout << " Matches / inliers   : " << mnMatchesInliers                 << '\n';
+                std::cout << " Map points in map   : " << mpAtlas->MapPointsInMap()        << '\n';
+                std::cout << " Local KFs (#)       : " << mvpLocalKeyFrames.size()         << '\n';
+                std::cout << " Candidate KF needed : " << NeedNewKeyFrame()               << '\n';
+                std::cout << " ---------------------------------------------------\n";
+                std::cout << "[DEBUG][Track] END\n";
+            }
+            
             return;
         }
         else if(mCurrentFrame.mTimeStamp>mLastFrame.mTimeStamp+1.0)
@@ -2418,6 +2459,21 @@ void Tracking::Track()
         }
     }
 #endif
+
+    // ---- DEBUG block (end of Track()) ---------------------------------
+    if (std::getenv("DEBUG_TrackT") != nullptr &&
+        strcmp(std::getenv("DEBUG_Track"), "1") == 0)
+    {
+        std::cout << "\n[DEBUG][Track] BEGIN ---------\n";
+        std::cout << " FrameID             : " << mCurrentFrame.mnId              << '\n';
+        std::cout << " Sensor state        : " << mState                           << '\n';
+        std::cout << " Matches / inliers   : " << mnMatchesInliers                 << '\n';
+        std::cout << " Map points in map   : " << mpAtlas->MapPointsInMap()        << '\n';
+        std::cout << " Local KFs (#)       : " << mvpLocalKeyFrames.size()         << '\n';
+        std::cout << " Candidate KF needed : " << NeedNewKeyFrame()               << '\n';
+        std::cout << " ---------------------------------------------------\n";
+        std::cout << "[DEBUG][Track] END\n";
+    }
 }
 
 
@@ -2577,7 +2633,7 @@ void Tracking::MonocularInitialization()
         }
 
         // Find correspondences
-        ORBmatcher matcher(0.9,true);
+        ORBmatcher matcher(0.9, GlobalFeatureExtractorInfo::GetFeatureExtractorType() == "ORB" || GlobalFeatureExtractorInfo::GetFeatureExtractorType() == "SIFT" );
         int nmatches = matcher.SearchForInitialization(mInitialFrame,mCurrentFrame,mvbPrevMatched,mvIniMatches,100);
 
         // Check if there are enough correspondences
@@ -2813,7 +2869,7 @@ bool Tracking::TrackReferenceKeyFrame()
 
     // We perform first an ORB matching with the reference keyframe
     // If enough matches are found we setup a PnP solver
-    ORBmatcher matcher(0.7,true);
+    ORBmatcher matcher(0.7, GlobalFeatureExtractorInfo::GetFeatureExtractorType() == "ORB" || GlobalFeatureExtractorInfo::GetFeatureExtractorType() == "SIFT" );
     vector<MapPoint*> vpMapPointMatches;
 
     int nmatches = matcher.SearchByBoW(mpReferenceKF,mCurrentFrame,vpMapPointMatches);
@@ -2942,7 +2998,7 @@ void Tracking::UpdateLastFrame()
 
 bool Tracking::TrackWithMotionModel()
 {
-    ORBmatcher matcher(0.9,true);
+    ORBmatcher matcher(0.9, GlobalFeatureExtractorInfo::GetFeatureExtractorType() == "ORB" || GlobalFeatureExtractorInfo::GetFeatureExtractorType() == "SIFT" );
 
     // Update last frame pose according to its reference keyframe
     // Create "visual odometry" points if in Localization Mode
@@ -3279,6 +3335,17 @@ bool Tracking::NeedNewKeyFrame()
         // Otherwise send a signal to interrupt BA
         if(bLocalMappingIdle || mpLocalMapper->IsInitializing())
         {
+            if (std::getenv("DEBUG_NeedNewKeyFrameT") != nullptr &&
+                strcmp(std::getenv("DEBUG_NeedNewKeyFrame"), "1") == 0)
+            {
+                std::cout << "[DEBUG][NeedNewKeyFrame] nMatchesInliers=" << mnMatchesInliers
+                          << "  nRefMatches=" << mpReferenceKF->TrackedMapPoints(3) << '\n'
+                          << "  lastKFId="     << mnLastKeyFrameId
+                          << "  curFrameId="   << mCurrentFrame.mnId
+                          << "  decision="     << std::boolalpha << ( (c1a||c1b||c1c)&&c2 )
+                          << std::noboolalpha << '\n';
+            }
+            
             return true;
         }
         else
@@ -3287,19 +3354,69 @@ bool Tracking::NeedNewKeyFrame()
             if(mSensor!=System::MONOCULAR  && mSensor!=System::IMU_MONOCULAR)
             {
                 if(mpLocalMapper->KeyframesInQueue()<3)
+                {
+                    if (std::getenv("DEBUG_NeedNewKeyFrameT") != nullptr &&
+                        strcmp(std::getenv("DEBUG_NeedNewKeyFrame"), "1") == 0)
+                    {
+                        std::cout << "[DEBUG][NeedNewKeyFrame] nMatchesInliers=" << mnMatchesInliers
+                                << "  nRefMatches=" << mpReferenceKF->TrackedMapPoints(3) << '\n'
+                                << "  lastKFId="     << mnLastKeyFrameId
+                                << "  curFrameId="   << mCurrentFrame.mnId
+                                << "  decision="     << std::boolalpha << ( (c1a||c1b||c1c)&&c2 )
+                                << std::noboolalpha << '\n';
+                    }
+                    
                     return true;
+                }
                 else
+                {
+                    if (std::getenv("DEBUG_NeedNewKeyFrameT") != nullptr &&
+                        strcmp(std::getenv("DEBUG_NeedNewKeyFrame"), "1") == 0)
+                    {
+                        std::cout << "[DEBUG][NeedNewKeyFrame] nMatchesInliers=" << mnMatchesInliers
+                                << "  nRefMatches=" << mpReferenceKF->TrackedMapPoints(3) << '\n'
+                                << "  lastKFId="     << mnLastKeyFrameId
+                                << "  curFrameId="   << mCurrentFrame.mnId
+                                << "  decision="     << std::boolalpha << ( (c1a||c1b||c1c)&&c2 )
+                                << std::noboolalpha << '\n';
+                    }
+                    
                     return false;
+                }
             }
             else
             {
                 //std::cout << "NeedNewKeyFrame: localmap is busy" << std::endl;
+                if (std::getenv("DEBUG_NeedNewKeyFrameT") != nullptr &&
+                    strcmp(std::getenv("DEBUG_NeedNewKeyFrame"), "1") == 0)
+                {
+                    std::cout << "[DEBUG][NeedNewKeyFrame] nMatchesInliers=" << mnMatchesInliers
+                            << "  nRefMatches=" << mpReferenceKF->TrackedMapPoints(3) << '\n'
+                            << "  lastKFId="     << mnLastKeyFrameId
+                            << "  curFrameId="   << mCurrentFrame.mnId
+                            << "  decision="     << std::boolalpha << ( (c1a||c1b||c1c)&&c2 )
+                            << std::noboolalpha << '\n';
+                }
+                
                 return false;
             }
         }
     }
     else
+    {
+        if (std::getenv("DEBUG_NeedNewKeyFrameT") != nullptr &&
+            strcmp(std::getenv("DEBUG_NeedNewKeyFrame"), "1") == 0)
+        {
+            std::cout << "[DEBUG][NeedNewKeyFrame] nMatchesInliers=" << mnMatchesInliers
+                    << "  nRefMatches=" << mpReferenceKF->TrackedMapPoints(3) << '\n'
+                    << "  lastKFId="     << mnLastKeyFrameId
+                    << "  curFrameId="   << mCurrentFrame.mnId
+                    << "  decision="     << std::boolalpha << ( (c1a||c1b||c1c)&&c2 )
+                    << std::noboolalpha << '\n';
+        }
+        
         return false;
+    }
 }
 
 void Tracking::CreateNewKeyFrame()
@@ -3476,7 +3593,7 @@ void Tracking::SearchLocalPoints()
 
     if(nToMatch>0)
     {
-        ORBmatcher matcher(0.8);
+        ORBmatcher matcher(0.8, GlobalFeatureExtractorInfo::GetFeatureExtractorType() == "ORB" || GlobalFeatureExtractorInfo::GetFeatureExtractorType() == "SIFT" );
         int th = 1;
         if(mSensor==System::RGBD || mSensor==System::IMU_RGBD)
             th=3;
@@ -3714,7 +3831,7 @@ bool Tracking::Relocalization()
 
     // We perform first an ORB matching with each candidate
     // If enough matches are found we setup a PnP solver
-    ORBmatcher matcher(0.75,true);
+    ORBmatcher matcher(0.75, GlobalFeatureExtractorInfo::GetFeatureExtractorType() == "ORB" || GlobalFeatureExtractorInfo::GetFeatureExtractorType() == "SIFT" );
 
     vector<MLPnPsolver*> vpMLPnPsolvers;
     vpMLPnPsolvers.resize(nKFs);
@@ -3753,7 +3870,7 @@ bool Tracking::Relocalization()
     // Alternatively perform some iterations of P4P RANSAC
     // Until we found a camera pose supported by enough inliers
     bool bMatch = false;
-    ORBmatcher matcher2(0.9,true);
+    ORBmatcher matcher2(0.9, GlobalFeatureExtractorInfo::GetFeatureExtractorType() == "ORB" || GlobalFeatureExtractorInfo::GetFeatureExtractorType() == "SIFT" );
 
     while(nCandidates>0 && !bMatch)
     {

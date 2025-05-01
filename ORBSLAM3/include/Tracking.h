@@ -116,10 +116,6 @@ public:
     bool stopRequested();
 #endif
 
-    // Factory method to create feature extractors based on type
-    FeatureExtractor* CreateFeatureExtractor(int nFeatures, float scaleFactor, int nLevels, 
-                                          int iniThFAST, int minThFAST, const std::string& type);
-
 public:
 
     // Tracking states
@@ -240,6 +236,9 @@ protected:
         int iniThFAST, int minThFAST, const std::string& type);
 
     bool mbMapUpdated;
+    
+    //path to yaml file
+    std::string strSettingPath;
 
     // Imu preintegration from last frame
     IMU::Preintegrated *mpImuPreintegratedFromLastKF;
