@@ -77,6 +77,14 @@ set(COMMON_LIBRARIES
     -lcrypto
 )
 
+add_library(Match_Visualizer SHARED
+    src/MatchVisualizer.cc
+    )
+target_link_libraries(Match_Visualizer
+    ${OpenCV_LIBS}
+    ${EIGEN3_LIBS}
+)
+
 add_library(Feature_Extractors SHARED
     src/FeatureExtractors/ORBextractor.cc
     src/FeatureExtractors/SIFTextractor.cc
@@ -137,7 +145,7 @@ add_library(${PROJECT_NAME} SHARED
     src/ImuTypes.cc
 )
 
-target_link_libraries(${PROJECT_NAME} ${COMMON_LIBRARIES} Feature_Extractors)
+target_link_libraries(${PROJECT_NAME} ${COMMON_LIBRARIES} Feature_Extractors Match_Visualizer)
 
 # Build examples - these link to the main library which includes all modules
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_ROOT_DIR}/Examples/ORB)

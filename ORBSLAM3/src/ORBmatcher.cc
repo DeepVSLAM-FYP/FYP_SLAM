@@ -216,8 +216,7 @@ namespace ORB_SLAM3
             }
         }
         
-        if(std::getenv("DEBUG_SearchByProjection") &&
-        std::strcmp(std::getenv("DEBUG_SearchByProjection"), "1") == 0)
+        if(std::getenv("DEBUG_SearchByProjection"))
         {
             std::cout << "[DEBUG] SearchByProjection  "
                     << "nmatches=" << nmatches
@@ -441,8 +440,7 @@ namespace ORB_SLAM3
             }
         }
 
-        if(std::getenv("DEBUG_SearchByBoW") &&
-           std::strcmp(std::getenv("DEBUG_SearchByBoW"), "1") == 0)
+        if(std::getenv("DEBUG_SearchByBoW"))
         {
             std::cout << "[DEBUG] SearchByBoW  nmatches=" << nmatches
                       << "  KF id=" << pKF->mnId
@@ -558,8 +556,7 @@ namespace ORB_SLAM3
 
         }
 
-        if(std::getenv("DEBUG_SearchByProjectionKF") &&
-           std::strcmp(std::getenv("DEBUG_SearchByProjectionKF"), "1") == 0)
+        if(std::getenv("DEBUG_SearchByProjectionKF") )
         {
             std::cout << "[DEBUG] SearchByProjectionKF  baseKF=" << pKF->mnId
                       << "  candidates=" << vpPoints.size()
@@ -683,8 +680,7 @@ namespace ORB_SLAM3
         }
 
 
-        if(std::getenv("DEBUG_SearchByProjectionKF") &&
-           std::strcmp(std::getenv("DEBUG_SearchByProjectionKF"), "1") == 0)
+        if(std::getenv("DEBUG_SearchByProjectionKF") )
         {
             std::cout << "[DEBUG] SearchByProjectionKF  baseKF=" << pKF->mnId
                       << "  candidates=" << vpPoints.size()
@@ -706,7 +702,7 @@ namespace ORB_SLAM3
             rotHist[i].reserve(500);
         const float factor = 1.0f/HISTO_LENGTH;
 
-        vector<int> vMatchedDistance(F2.mvKeysUn.size(),INT_MAX);
+        vector<float> vMatchedDistance(F2.mvKeysUn.size(),std::numeric_limits<float>::max());
         vector<int> vnMatches21(F2.mvKeysUn.size(),-1);
 
         for(size_t i1=0, iend1=F1.mvKeysUn.size(); i1<iend1; i1++)
@@ -723,8 +719,8 @@ namespace ORB_SLAM3
 
             cv::Mat d1 = F1.mDescriptors.row(i1);
 
-            float bestDist = INT_MAX;
-            float bestDist2 = INT_MAX;
+            float bestDist = std::numeric_limits<float>::max();
+            float bestDist2 = std::numeric_limits<float>::max();
             int bestIdx2 = -1;
 
             for(vector<size_t>::iterator vit=vIndices2.begin(); vit!=vIndices2.end(); vit++)
@@ -810,8 +806,7 @@ namespace ORB_SLAM3
             if(vnMatches12[i1]>=0)
                 vbPrevMatched[i1]=F2.mvKeysUn[vnMatches12[i1]].pt;
 
-        if(std::getenv("DEBUG_SearchForInitialization") &&
-           std::strcmp(std::getenv("DEBUG_SearchForInitialization"), "1") == 0)
+        if(std::getenv("DEBUG_SearchForInitialization") )
         {
             std::cout << "[DEBUG] SearchForInitialization  nmatches=" << nmatches
                       << "  F1 id=" << F1.mnId
@@ -892,7 +887,7 @@ namespace ORB_SLAM3
 
                         const cv::Mat &d2 = Descriptors2.row(idx2);
 
-                        int dist = DescriptorDistance(d1,d2);
+                        float dist = DescriptorDistance(d1,d2);
 
                         if(dist<bestDist1)
                         {
@@ -963,8 +958,7 @@ namespace ORB_SLAM3
         }
 
         //Add a debug block here
-        if(std::getenv("DEBUG_SearchByBoW") &&
-           std::strcmp(std::getenv("DEBUG_SearchByBoW"), "1") == 0)
+        if(std::getenv("DEBUG_SearchByBoW") )
         {
             std::cout << "[DEBUG] SearchByBoW  nmatches=" << nmatches
                       << "  KF1 id=" << pKF1->mnId
@@ -1215,8 +1209,7 @@ namespace ORB_SLAM3
         }
 
         // add a debug block here
-        if(std::getenv("DEBUG_SearchForTriangulation") &&
-           std::strcmp(std::getenv("DEBUG_SearchForTriangulation"), "1") == 0)
+        if(std::getenv("DEBUG_SearchForTriangulation") )
         {
             std::cout << "[DEBUG] SearchForTriangulation  nmatches=" << nmatches
                       << "  KF1 id=" << pKF1->mnId
@@ -1418,8 +1411,7 @@ namespace ORB_SLAM3
 
         }
 
-        if(std::getenv("DEBUG_Fuse") &&
-           std::strcmp(std::getenv("DEBUG_Fuse"), "1") == 0)
+        if(std::getenv("DEBUG_Fuse") )
         {
             std::cout << "[DEBUG] Fuse  KF id=" << pKF->mnId
                       << "  tried="   << vpMapPoints.size()
@@ -1546,8 +1538,7 @@ namespace ORB_SLAM3
         }
 
 
-        if(std::getenv("DEBUG_Fuse") &&
-            std::strcmp(std::getenv("DEBUG_Fuse"), "1") == 0)
+        if(std::getenv("DEBUG_Fuse") )
         {
              std::cout << "[DEBUG] Fuse  KF id=" << pKF->mnId
                           << "  tried="   << vpPoints.size()
@@ -1774,8 +1765,7 @@ namespace ORB_SLAM3
             }
         }
 
-        if(std::getenv("DEBUG_SearchBySim3") &&
-           std::strcmp(std::getenv("DEBUG_SearchBySim3"), "1") == 0)
+        if(std::getenv("DEBUG_SearchBySim3") )
         {
             std::cout << "[DEBUG] SearchBySim3  KF1=" << pKF1->mnId
                       << "  KF2=" << pKF2->mnId
@@ -1997,8 +1987,7 @@ namespace ORB_SLAM3
             }
         }
 
-        if(std::getenv("DEBUG_SearchByProjectionFrame") &&
-           std::strcmp(std::getenv("DEBUG_SearchByProjectionFrame"), "1") == 0)
+        if(std::getenv("DEBUG_SearchByProjectionFrame") )
         {
             std::cout << "[DEBUG] SearchByProjectionFrame  "
                       << "CurrentF id=" << CurrentFrame.mnId
@@ -2133,8 +2122,7 @@ namespace ORB_SLAM3
             }
         }
 
-        if(std::getenv("DEBUG_SearchByProjectionFrame") &&
-        std::strcmp(std::getenv("DEBUG_SearchByProjectionFrame"), "1") == 0)
+        if(std::getenv("DEBUG_SearchByProjectionFrame") )
         {
             std::cout << "[DEBUG] SearchByProjectionKF  "
                       << "CurrentF id=" << CurrentFrame.mnId
@@ -2190,8 +2178,7 @@ namespace ORB_SLAM3
             ind3=-1;
         }
 
-        if(std::getenv("DEBUG_ComputeThreeMaxima") &&
-           std::strcmp(std::getenv("DEBUG_ComputeThreeMaxima"), "1") == 0)
+        if(std::getenv("DEBUG_ComputeThreeMaxima") )
         {
             std::cout << "[DEBUG] ComputeThreeMaxima  ind1=" << ind1
                       << " ind2=" << ind2 << " ind3=" << ind3 << std::endl;
@@ -2206,6 +2193,19 @@ namespace ORB_SLAM3
         float dist = 0;      
         if(a.type() == CV_8U) { // ORB
             dist = cv::norm(a, b, cv::NORM_HAMMING);
+            // const int *pa = a.ptr<int32_t>();
+            // const int *pb = b.ptr<int32_t>();
+
+            // int disti=0;
+            // for(int i=0; i<8; i++, pa++, pb++)
+            // {
+            //     unsigned  int v = *pa ^ *pb;
+            //     v = v - ((v >> 1) & 0x55555555);
+            //     v = (v & 0x33333333) + ((v >> 2) & 0x33333333);
+            //     disti += (((v + (v >> 4)) & 0xF0F0F0F) * 0x1010101) >> 24;
+            // }
+            // // std::cout << "CV dist=" << dist << " custom dist=" << disti << std::endl;
+            // dist = (float)disti;
         } else {    
             if(GlobalFeatureExtractorInfo::GetFeatureExtractorType() == "SIFT"){
                 dist = (cv::norm(a, b, cv::NORM_L2SQR));
@@ -2216,8 +2216,7 @@ namespace ORB_SLAM3
             }
         }
 
-        if(std::getenv("DEBUG_DescriptorDistance") &&
-           std::strcmp(std::getenv("DEBUG_DescriptorDistance"), "1") == 0)
+        if(std::getenv("DEBUG_DescriptorDistance") )
         {
             std::cout << "[DEBUG] DescriptorDistance "
                       << ((a.type()==CV_8U) ? "HAMMING" : "L2²")

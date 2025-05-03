@@ -190,6 +190,9 @@ private:
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
+    //Frame image
+    cv::Mat image;
+
     // Vocabulary used for relocalization.
     ORBVocabulary* mpORBvocabulary;
 

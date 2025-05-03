@@ -72,6 +72,7 @@ Frame::Frame(const Frame &frame)
      mTlr(frame.mTlr), mRlr(frame.mRlr), mtlr(frame.mtlr), mTrl(frame.mTrl),
      mTcw(frame.mTcw), mbHasPose(false), mbHasVelocity(false)
 {
+    image = frame.image;
     for(int i=0;i<FRAME_GRID_COLS;i++)
         for(int j=0; j<FRAME_GRID_ROWS; j++){
             mGrid[i][j]=frame.mGrid[i][j];
@@ -295,6 +296,8 @@ Frame::Frame(const cv::Mat &imGray, const double &timeStamp, FeatureExtractor* e
     // Frame ID
     mnId=nNextId++;
 
+    image =imGray.clone();
+
     // Scale Level Info
     mnScaleLevels = mpORBextractorLeft->GetLevels();
     mfScaleFactor = mpORBextractorLeft->GetScaleFactor();
@@ -423,7 +426,7 @@ void Frame::ExtractORB(int flag, const cv::Mat &im, const int x0, const int x1)
         // Check if DEBUG_SLAM environment variable is set
         if(std::getenv("DEBUG_SLAM") != nullptr)
         {
-            std::cout << "Frame: "<< this->mnId << " | # of features detected: " << monoLeft << std::endl;
+            std::cout << "Frame: "<< this->mnId << " | # of features detected: " << mvKeys.size() << std::endl;
         }
     }
     else

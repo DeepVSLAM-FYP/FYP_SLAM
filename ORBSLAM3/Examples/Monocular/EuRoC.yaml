@@ -46,7 +46,7 @@ Camera.RGB: 1
 # Feature Extractor Parameters
 #--------------------------------------------------------------------------------------------
 # Feature extractor type (ORB, SIFT)
-FeatureExtractor.type: "SIFT"
+FeatureExtractor.type: "ORB"
 
 #--------------------------------------------------------------------------------------------
 # ORB Parameters

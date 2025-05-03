@@ -37,7 +37,7 @@
 #include "ImuTypes.h"
 #include "Settings.h"
 #include "GlobalFeatureExtractorType.h"
-
+#include "MatchVisualizer.h"
 #include "GeometricCamera.h"
 
 #include <mutex>

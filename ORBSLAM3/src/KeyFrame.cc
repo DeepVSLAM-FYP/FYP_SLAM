@@ -62,7 +62,7 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
     mvKeysRight(F.mvKeysRight), NLeft(F.Nleft), NRight(F.Nright), mTrl(F.GetRelativePoseTrl()), mnNumberOfOpt(0), mbHasVelocity(false)
 {
     mnId=nNextId++;
-
+    image = F.image;
     mGrid.resize(mnGridCols);
     if(F.Nleft != -1)  mGridRight.resize(mnGridCols);
     for(int i=0; i<mnGridCols;i++)

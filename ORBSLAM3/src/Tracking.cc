@@ -1678,6 +1678,12 @@ Sophus::SE3f Tracking::GrabImageMonocular(const cv::Mat &im, const double &times
 
     lastID = mCurrentFrame.mnId;
     Track();
+    if (std::getenv("DEBUG_GrabImageT") != nullptr )
+    {
+        std::cout << "[DEBUG][GrabImage] ts=" << std::fixed << timestamp
+                << " | FrameID=" << mCurrentFrame.mnId
+                << " | Keypoints=" << mCurrentFrame.N << '\n';
+    }
 
     return mCurrentFrame.GetPose();
 }
@@ -1939,8 +1945,7 @@ void Tracking::Track()
             CreateMapInAtlas();
             
             // ---- DEBUG block (end of Track()) ---------------------------------
-            if (std::getenv("DEBUG_TrackT") != nullptr &&
-                strcmp(std::getenv("DEBUG_Track"), "1") == 0)
+            if (std::getenv("DEBUG_TrackT") != nullptr )
             {
                 std::cout << "\n[DEBUG][Track] BEGIN ---------\n";
                 std::cout << " FrameID             : " << mCurrentFrame.mnId              << '\n';
@@ -2461,8 +2466,7 @@ void Tracking::Track()
 #endif
 
     // ---- DEBUG block (end of Track()) ---------------------------------
-    if (std::getenv("DEBUG_TrackT") != nullptr &&
-        strcmp(std::getenv("DEBUG_Track"), "1") == 0)
+    if (std::getenv("DEBUG_TrackT") != nullptr)
     {
         std::cout << "\n[DEBUG][Track] BEGIN ---------\n";
         std::cout << " FrameID             : " << mCurrentFrame.mnId              << '\n';
@@ -2592,6 +2596,14 @@ void Tracking::StereoInitialization()
 
 void Tracking::MonocularInitialization()
 {
+    /* ---------- DEBUG A: start of MonocularInitialization ---------- */
+    if(std::getenv("DEBUG_MonocularInitializationT") != nullptr )
+    {
+    std::cout << "\n[DEBUG][MonoInit] ENTER  FrameID=" << mCurrentFrame.mnId
+            << "  keypoints=" << mCurrentFrame.mvKeys.size()
+            << "  readyFlag=" << std::boolalpha << mbReadyToInitializate
+            << std::noboolalpha << std::endl;
+    }
 
     if(!mbReadyToInitializate)
     {
@@ -2622,31 +2634,138 @@ void Tracking::MonocularInitialization()
 
             return;
         }
+        /* ---------- DEBUG B: reference frame created ---------- */
+        if(std::getenv("DEBUG_MonocularInitializationT") != nullptr )
+        {
+        std::cout << "[DEBUG][MonoInit] set reference frame:  InitFrameID="
+                << mInitialFrame.mnId
+                << "  mvbPrevMatched=" << mvbPrevMatched.size()
+                << "  mvIniMatches(size)=" << mvIniMatches.size() << std::endl;
+        }
     }
     else
     {
         if (((int)mCurrentFrame.mvKeys.size()<=100)||((mSensor == System::IMU_MONOCULAR)&&(mLastFrame.mTimeStamp-mInitialFrame.mTimeStamp>1.0)))
         {
             mbReadyToInitializate = false;
-
+                        /* ---------- DEBUG F: end of MonocularInitialization ---------- */
+            if(std::getenv("DEBUG_MonocularInitializationT") != nullptr )
+            {
+            std::cout << "[DEBUG][MonoInit] EXIT  readyFlag="
+                    << std::boolalpha << mbReadyToInitializate
+                    << "  state=" << mState
+                    // << "  last nmatches=" << nmatches
+                    << std::noboolalpha << std::endl;
+        }
             return;
         }
 
+        /* ---------- DEBUG C: before SearchForInitialization ---------- */
+        if(std::getenv("DEBUG_MonocularInitializationT") != nullptr )
+        {
+        std::cout << "[DEBUG][MonoInit] invoking SearchForInitialization  "
+                << "CurrentKFkeys=" << mCurrentFrame.mvKeysUn.size() << std::endl;
+        }
         // Find correspondences
         ORBmatcher matcher(0.9, GlobalFeatureExtractorInfo::GetFeatureExtractorType() == "ORB" || GlobalFeatureExtractorInfo::GetFeatureExtractorType() == "SIFT" );
         int nmatches = matcher.SearchForInitialization(mInitialFrame,mCurrentFrame,mvbPrevMatched,mvIniMatches,100);
+        
+        /* ---------- DEBUG D: after SearchForInitialization ---------- */
+        if(std::getenv("DEBUG_MonocularInitializationT") != nullptr)
+        {
+            std::cout << "[DEBUG][MonoInit] SearchForInitialization produced "
+                    << nmatches << " putative matches" << std::endl;
+
+            // Use mImGray (the grayscale image being processed) instead of image field
+            if(!mImGray.empty())
+            {
+                // Clone images to avoid modifying originals
+                cv::Mat initImg = mInitialFrame.image.clone();
+                cv::Mat currImg = mImGray.clone();
+                
+                // Convert back to BGR for color visualization if needed
+                if(initImg.channels() == 1)
+                    cv::cvtColor(initImg, initImg, cv::COLOR_GRAY2BGR);
+                if(currImg.channels() == 1)
+                    cv::cvtColor(currImg, currImg, cv::COLOR_GRAY2BGR);
+                
+                // MatchVisualizer::ShowMatches(
+                //     initImg, mInitialFrame.mvKeysUn, 
+                //     currImg, mCurrentFrame.mvKeysUn, 
+                //     mvIniMatches, "MonoInit Matches", true); 
+
+                MatchVisualizer::SaveMatchImage(
+                    initImg,
+                    mInitialFrame.mvKeysUn,
+                    currImg,
+                    mCurrentFrame.mvKeysUn,
+                    mvIniMatches,
+                        "/mnt/sda1/FYP_2024/Ruchith/FYP_SLAM/_results/InitMatches.jpg"
+                    );
+            }
+            else
+            {
+                std::cout << "[DEBUG][MonoInit] Cannot visualize matches - images are empty" << std::endl;
+            }
+        }
 
         // Check if there are enough correspondences
         if(nmatches<100)
         {
             mbReadyToInitializate = false;
+
+            /* ---------- DEBUG F: end of MonocularInitialization ---------- */
+            if(std::getenv("DEBUG_MonocularInitializationT") != nullptr )
+            {
+            std::cout << "[DEBUG][MonoInit] EXIT  readyFlag="
+                    << std::boolalpha << mbReadyToInitializate
+                    << "  state=" << mState
+                    << "  last nmatches=" << nmatches
+                    << std::noboolalpha << std::endl;
+            }
             return;
         }
 
         Sophus::SE3f Tcw;
         vector<bool> vbTriangulated; // Triangulated Correspondences (mvIniMatches)
 
-        if(mpCamera->ReconstructWithTwoViews(mInitialFrame.mvKeysUn,mCurrentFrame.mvKeysUn,mvIniMatches,Tcw,mvIniP3D,vbTriangulated))
+        // Debug show all of the information of the varibles go into the triangulation
+        if(std::getenv("DEBUG_MonocularInitializationT") != nullptr )
+        {
+            std::cout << "[DEBUG][MonoInit] nmatches=" << nmatches
+                    << "  mInitialFrame.mvKeysUn.size()=" << mInitialFrame.mvKeysUn.size()
+                    << "  mCurrentFrame.mvKeysUn.size()=" << mCurrentFrame.mvKeysUn.size()
+                    << std::endl;
+
+            int count = 0;
+            for(size_t i=0; i<mvIniMatches.size(); i++)
+                {
+                    if(mvIniMatches[i]>=0)
+                    {
+                        count++;
+                        // Print every 10 matches
+                        if(count % 10 == 0){
+                            std::cout << "[DEBUG][MonoInit] idx: " << i << " = " << mvIniMatches[i]
+                                    << " InFPt: " << mInitialFrame.mvKeysUn[i].pt
+                                    << " |  CurFPt: " << mCurrentFrame.mvKeysUn[mvIniMatches[i]].pt
+                                    << std::endl;
+                        }
+                    }
+            }
+        }
+
+        bool success = mpCamera->ReconstructWithTwoViews(mInitialFrame.mvKeysUn,mCurrentFrame.mvKeysUn,mvIniMatches,Tcw,mvIniP3D,vbTriangulated);
+
+        if(std::getenv("DEBUG_MonocularInitializationT") != nullptr )
+        {
+            std::cout << "[DEBUG][MonoInit] 2-view reconstruction "
+                    << (success ? "SUCCESS" : "FAILED")
+                    << "  triangulated=" << std::count(vbTriangulated.begin(),
+                                                        vbTriangulated.end(), true)
+                    << "  Tcw.z=" << Tcw.translation().z() << std::endl;
+        }
+
+        if(success)
         {
             for(size_t i=0, iend=mvIniMatches.size(); i<iend;i++)
             {
@@ -2662,6 +2781,8 @@ void Tracking::MonocularInitialization()
             mCurrentFrame.SetPose(Tcw);
 
             CreateInitialMapMonocular();
+        }else{
+            cout << "Triangulation failed" << endl;
         }
     }
 }
@@ -3335,8 +3456,7 @@ bool Tracking::NeedNewKeyFrame()
         // Otherwise send a signal to interrupt BA
         if(bLocalMappingIdle || mpLocalMapper->IsInitializing())
         {
-            if (std::getenv("DEBUG_NeedNewKeyFrameT") != nullptr &&
-                strcmp(std::getenv("DEBUG_NeedNewKeyFrame"), "1") == 0)
+            if (std::getenv("DEBUG_NeedNewKeyFrameT") != nullptr )
             {
                 std::cout << "[DEBUG][NeedNewKeyFrame] nMatchesInliers=" << mnMatchesInliers
                           << "  nRefMatches=" << mpReferenceKF->TrackedMapPoints(3) << '\n'
@@ -3355,8 +3475,7 @@ bool Tracking::NeedNewKeyFrame()
             {
                 if(mpLocalMapper->KeyframesInQueue()<3)
                 {
-                    if (std::getenv("DEBUG_NeedNewKeyFrameT") != nullptr &&
-                        strcmp(std::getenv("DEBUG_NeedNewKeyFrame"), "1") == 0)
+                    if (std::getenv("DEBUG_NeedNewKeyFrameT") != nullptr )
                     {
                         std::cout << "[DEBUG][NeedNewKeyFrame] nMatchesInliers=" << mnMatchesInliers
                                 << "  nRefMatches=" << mpReferenceKF->TrackedMapPoints(3) << '\n'
@@ -3370,8 +3489,7 @@ bool Tracking::NeedNewKeyFrame()
                 }
                 else
                 {
-                    if (std::getenv("DEBUG_NeedNewKeyFrameT") != nullptr &&
-                        strcmp(std::getenv("DEBUG_NeedNewKeyFrame"), "1") == 0)
+                    if (std::getenv("DEBUG_NeedNewKeyFrameT") != nullptr )
                     {
                         std::cout << "[DEBUG][NeedNewKeyFrame] nMatchesInliers=" << mnMatchesInliers
                                 << "  nRefMatches=" << mpReferenceKF->TrackedMapPoints(3) << '\n'
@@ -3387,8 +3505,7 @@ bool Tracking::NeedNewKeyFrame()
             else
             {
                 //std::cout << "NeedNewKeyFrame: localmap is busy" << std::endl;
-                if (std::getenv("DEBUG_NeedNewKeyFrameT") != nullptr &&
-                    strcmp(std::getenv("DEBUG_NeedNewKeyFrame"), "1") == 0)
+                if (std::getenv("DEBUG_NeedNewKeyFrameT") != nullptr )
                 {
                     std::cout << "[DEBUG][NeedNewKeyFrame] nMatchesInliers=" << mnMatchesInliers
                             << "  nRefMatches=" << mpReferenceKF->TrackedMapPoints(3) << '\n'
@@ -3404,8 +3521,7 @@ bool Tracking::NeedNewKeyFrame()
     }
     else
     {
-        if (std::getenv("DEBUG_NeedNewKeyFrameT") != nullptr &&
-            strcmp(std::getenv("DEBUG_NeedNewKeyFrame"), "1") == 0)
+        if (std::getenv("DEBUG_NeedNewKeyFrameT") != nullptr )
         {
             std::cout << "[DEBUG][NeedNewKeyFrame] nMatchesInliers=" << mnMatchesInliers
                     << "  nRefMatches=" << mpReferenceKF->TrackedMapPoints(3) << '\n'
@@ -3417,6 +3533,18 @@ bool Tracking::NeedNewKeyFrame()
         
         return false;
     }
+
+    if (std::getenv("DEBUG_NeedNewKeyFrameT") != nullptr )
+    {
+        std::cout << "[DEBUG][NeedNewKeyFrame] nMatchesInliers=" << mnMatchesInliers
+                << "  nRefMatches=" << mpReferenceKF->TrackedMapPoints(3) << '\n'
+                << "  lastKFId="     << mnLastKeyFrameId
+                << "  curFrameId="   << mCurrentFrame.mnId
+                << "  decision="     << std::boolalpha << ( (c1a||c1b||c1c)&&c2 )
+                << std::noboolalpha << '\n';
+    }
+
+
 }
 
 void Tracking::CreateNewKeyFrame()
@@ -3428,6 +3556,14 @@ void Tracking::CreateNewKeyFrame()
         return;
 
     KeyFrame* pKF = new KeyFrame(mCurrentFrame,mpAtlas->GetCurrentMap(),mpKeyFrameDB);
+
+    if (std::getenv("DEBUG_CreateNewKeyFrameT") != nullptr )
+    {
+        std::cout << "[DEBUG][CreateNewKeyFrame] New KF:"
+                << " id="        << pKF->mnId
+                << " | #MP added=" << pKF->GetMapPointMatches().size()
+                << " | Map now has " << mpAtlas->MapPointsInMap() << " MPs\n";
+    }
 
     if(mpAtlas->isImuInitialized()) //  || mpLocalMapper->IsInitializing())
         pKF->bImu = true;
@@ -3544,6 +3680,7 @@ void Tracking::CreateNewKeyFrame()
 
     mnLastKeyFrameId = mCurrentFrame.mnId;
     mpLastKeyFrame = pKF;
+
 }
 
 void Tracking::SearchLocalPoints()
@@ -3617,6 +3754,13 @@ void Tracking::SearchLocalPoints()
             th=15; // 15
 
         int matches = matcher.SearchByProjection(mCurrentFrame, mvpLocalMapPoints, th, mpLocalMapper->mbFarPoints, mpLocalMapper->mThFarPoints);
+
+        if (std::getenv("DEBUG_SearchLocalPointsT") != nullptr )
+        {
+            std::cout << "[DEBUG][SearchLocalPoints] candidates=" << nToMatch
+                    << " | window_th=" << th
+                    << " | projected matches=" << matches << '\n';
+        }
     }
 }
 
@@ -3624,10 +3768,19 @@ void Tracking::UpdateLocalMap()
 {
     // This is for visualization
     mpAtlas->SetReferenceMapPoints(mvpLocalMapPoints);
-
+    if (std::getenv("DEBUG_UpdateLocalMapT") != nullptr )
+    {
+        std::cout << "[DEBUG][UpdateLocalMap] local KFs=" << mvpLocalKeyFrames.size()
+                << " | local MPs=" << mvpLocalMapPoints.size() << '\n';
+    }
     // Update
     UpdateLocalKeyFrames();
     UpdateLocalPoints();
+    if (std::getenv("DEBUG_UpdateLocalMapT") != nullptr )
+    {
+        std::cout << "[DEBUG][UpdateLocalMap] local KFs=" << mvpLocalKeyFrames.size()
+                << " | local MPs=" << mvpLocalMapPoints.size() << '\n';
+    }
 }
 
 void Tracking::UpdateLocalPoints()

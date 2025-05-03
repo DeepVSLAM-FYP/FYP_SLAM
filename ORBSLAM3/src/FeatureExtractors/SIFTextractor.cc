@@ -25,10 +25,7 @@ int SIFTextractor::operator()(const cv::Mat& image, cv::InputArray mask,
 
     int nKeypoints = allKeypoints.size();
     
-    if(std::getenv("DEBUG_FEAT") != nullptr && strcmp(std::getenv("DEBUG_FEAT"), "1") == 0) 
-    {
-            std::cout << "nKeypoints: " << nKeypoints << std::endl;
-    }
+
 
     for (int i = 0; i < nKeypoints; ++i) {
         auto& kp = allKeypoints[i];
@@ -48,6 +45,13 @@ int SIFTextractor::operator()(const cv::Mat& image, cv::InputArray mask,
     // 4) Build a single‐level pyramid
     pyr_.resize(1);
     pyr_[0] = image;
+
+    if(std::getenv("DEBUG_FEAT") != nullptr) 
+    {
+            std::cout << "Total Keypoints: " << nKeypoints <<
+            " | Keypoints in octave 0: " << kps.size() <<             
+            std::endl;
+    }
 
     return static_cast<int>(kps.size());
 }

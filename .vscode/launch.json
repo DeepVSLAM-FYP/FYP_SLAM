@@ -10,7 +10,8 @@
             "request": "launch",
             "program": "${workspaceFolder}/Examples/ORB/monoORB_euroc",
             "args": [
-                "/mnt/sda1/FYP_2024/Ruchith/FYP_SLAM/Vocabulary/sift_vocabulary.fbow",
+                // "/mnt/sda1/FYP_2024/Ruchith/FYP_SLAM/Vocabulary/sift_vocabulary.fbow",
+                "/mnt/sda1/FYP_2024/Ruchith/FYP_SLAM/Vocabulary/orb_mur.fbow",
                 "${workspaceFolder}/ORBSLAM3/Examples/Monocular/EuRoC.yaml",
                 "${workspaceFolder}/datasets/V101",
                 "${workspaceFolder}/ORBSLAM3/Examples/Monocular/EuRoC_TimeStamps/V101.txt",
