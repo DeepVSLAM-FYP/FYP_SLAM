@@ -705,6 +705,11 @@ namespace ORB_SLAM3
         vector<float> vMatchedDistance(F2.mvKeysUn.size(),std::numeric_limits<float>::max());
         vector<int> vnMatches21(F2.mvKeysUn.size(),-1);
 
+        // For collecting stats on descriptor distances
+        const int NUM_DIST_BINS = 10;
+        vector<int> distanceBins(NUM_DIST_BINS, 0);
+        const float binSize = TH_HIGH / float(NUM_DIST_BINS-1);  // Last bin for distances > TH_HIGH
+        
         for(size_t i1=0, iend1=F1.mvKeysUn.size(); i1<iend1; i1++)
         {
             cv::KeyPoint kp1 = F1.mvKeysUn[i1];
@@ -760,6 +765,13 @@ namespace ORB_SLAM3
                     vMatchedDistance[bestIdx2]=bestDist;
                     nmatches++;
 
+                    // Categorize distances into bins for statistics
+                    if(std::getenv("DEBUG_SearchForInitialization"))
+                    {
+                        int bin = std::min(int(bestDist / binSize), NUM_DIST_BINS-1);
+                        distanceBins[bin]++;
+                    }
+
                     if(mbCheckOrientation)
                     {
                         float rot = F1.mvKeysUn[i1].angle-F2.mvKeysUn[bestIdx2].angle;
@@ -772,6 +784,17 @@ namespace ORB_SLAM3
                         rotHist[bin].push_back(i1);
                     }
                 }
+            }
+
+            if(std::getenv("DEBUG_SearchForInitializationDist"))
+            {
+                std::cout << "  i1=" << i1
+                          << " |  i2=" << bestIdx2
+                          << " | i12 bestDist=" << bestDist
+                          << " | bestDist2=" << bestDist2
+                          << " | vMatchedDistance=" << vMatchedDistance[bestIdx2] // best distance for i2 with a match from f1
+                          << std::endl;
+
             }
 
         }
@@ -806,12 +829,25 @@ namespace ORB_SLAM3
             if(vnMatches12[i1]>=0)
                 vbPrevMatched[i1]=F2.mvKeysUn[vnMatches12[i1]].pt;
 
-        if(std::getenv("DEBUG_SearchForInitialization") )
+        if(std::getenv("DEBUG_SearchForInitialization"))
         {
             std::cout << "[DEBUG] SearchForInitialization  nmatches=" << nmatches
-                      << "  F1 id=" << F1.mnId
-                      << "  F2 id=" << F2.mnId
-                      << std::endl;
+                    << "  F1 id=" << F1.mnId
+                    << "  F2 id=" << F2.mnId
+                    << std::endl;
+            
+            // Print histogram of descriptor distances
+            std::cout << "[DEBUG] Descriptor distance distribution:" << std::endl;
+            for(int i = 0; i < NUM_DIST_BINS-1; i++)
+            {
+                std::cout << "  Dist " << (i*binSize) << "-" << ((i+1)*binSize) 
+                        << ": " << distanceBins[i] << " matches" << std::endl;
+            }
+            std::cout << "  Dist " << ((NUM_DIST_BINS-1)*binSize) << "+: " 
+                    << distanceBins[NUM_DIST_BINS-1] << " matches" << std::endl;
+            std::cout << "Unmatched points F1: " << vnMatches12.size() - nmatches << " | "
+                      << "Unmatched points F2: " << vMatchedDistance.size() - nmatches << std::endl;
+            std::cout << "Total matches: " << nmatches << std::endl;
             std::cout << "[DEBUG] SearchForInitialization END" << std::endl;
         }
         
@@ -2216,7 +2252,7 @@ namespace ORB_SLAM3
             }
         }
 
-        if(std::getenv("DEBUG_DescriptorDistance") )
+        if(std::getenv("DEBUG_DescriptorDistance") != nullptr )
         {
             std::cout << "[DEBUG] DescriptorDistance "
                       << ((a.type()==CV_8U) ? "HAMMING" : "L2²")

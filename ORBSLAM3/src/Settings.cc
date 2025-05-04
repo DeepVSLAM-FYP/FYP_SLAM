@@ -450,6 +450,9 @@ namespace ORB_SLAM3 {
             std::cout << "Feature extractor type not specified, defaulting to ORB" << std::endl;
         }
         
+        TH_HIGH = readParameter<float>(fSettings,"Matcher.TH_HIGH",found);
+        TH_LOW = readParameter<float>(fSettings,"Matcher.TH_LOW",found);
+
         if (featureExtractorType_ == "ORB") {
             nFeatures_ = readParameter<int>(fSettings,"ORBextractor.nFeatures",found);
             scaleFactor_ = readParameter<float>(fSettings,"ORBextractor.scaleFactor",found);

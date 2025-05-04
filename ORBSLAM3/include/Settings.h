@@ -97,6 +97,8 @@ namespace ORB_SLAM3 {
         float depthMapFactor() {return depthMapFactor_;}
 
         std::string featureExtractorType() const { return featureExtractorType_; }
+        float thLow() {return TH_LOW;}
+        float thHigh() {return TH_HIGH;}
         int nFeatures() {return nFeatures_;}
         int nLevels() {return nLevels_;}
         float initThFAST() {return initThFAST_;}
@@ -205,6 +207,8 @@ namespace ORB_SLAM3 {
          * Feature extractor stuff
         */
         std::string featureExtractorType_; // Feature extractor type (ORB, SIFT, etc.)
+
+        float TH_LOW, TH_HIGH;
 
         /*
          * ORB stuff

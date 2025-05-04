@@ -593,6 +593,14 @@ void Tracking::newParameterLoader(Settings *settings) {
     int fMinThFAST = settings->minThFAST();
     float fScaleFactor = settings->scaleFactor();
 
+    // Read matcher threshold parameters from the configuration file
+    int th_high = settings->thHigh();
+    int th_low = settings->thLow();
+        
+    // Store values in global feature extractor info
+    GlobalFeatureExtractorInfo::SetTH_HIGH(th_high);
+    GlobalFeatureExtractorInfo::SetTH_LOW(th_low);
+
     // In Tracking::newParameterLoader
     std::string extractorType = settings->featureExtractorType();
     mpORBextractorLeft = CreateFeatureExtractor(nFeatures, fScaleFactor, nLevels, 
@@ -605,6 +613,10 @@ void Tracking::newParameterLoader(Settings *settings) {
     if(mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR)
         mpIniORBextractor = CreateFeatureExtractor(5*nFeatures, fScaleFactor, nLevels, 
                                                 fIniThFAST, fMinThFAST, extractorType);
+
+    
+    std::cout << "- Matcher TH_HIGH: " << th_high << std::endl;
+    std::cout << "- Matcher TH_LOW: " << th_low << std::endl;
 
     //IMU parameters
     Sophus::SE3f Tbc = settings->Tbc();
@@ -1870,28 +1882,6 @@ FeatureExtractor* Tracking::CreateFeatureExtractor(
 {
     // Set the global feature extractor type
     GlobalFeatureExtractorInfo::SetFeatureExtractorType(type);
-    
-    // Read matcher threshold parameters from the configuration file
-    cv::FileStorage fSettings(this->strSettingPath, cv::FileStorage::READ);
-    int th_high = 100;  // Default value
-    int th_low = 50;    // Default value
-    
-    cv::FileNode node = fSettings["Matcher.TH_HIGH"];
-    if(!node.empty() && node.isReal()) {
-        th_high = node.real();
-    }
-    
-    node = fSettings["Matcher.TH_LOW"];
-    if(!node.empty() && node.isReal()) {
-        th_low = node.real();
-    }
-    
-    // Store values in global feature extractor info
-    GlobalFeatureExtractorInfo::SetTH_HIGH(th_high);
-    GlobalFeatureExtractorInfo::SetTH_LOW(th_low);
-    
-    std::cout << "- Matcher TH_HIGH: " << th_high << std::endl;
-    std::cout << "- Matcher TH_LOW: " << th_low << std::endl;
 
     if (type == "ORB" || type.empty()) {
         std::cout << "Feature extractor type: ORB | nFeatures: " << nFeatures << std::endl;
@@ -2730,7 +2720,7 @@ void Tracking::MonocularInitialization()
         vector<bool> vbTriangulated; // Triangulated Correspondences (mvIniMatches)
 
         // Debug show all of the information of the varibles go into the triangulation
-        if(std::getenv("DEBUG_MonocularInitializationT") != nullptr )
+        if(std::getenv("DEBUG_MonocularInitializationShowMatchedCoords") != nullptr )
         {
             std::cout << "[DEBUG][MonoInit] nmatches=" << nmatches
                     << "  mInitialFrame.mvKeysUn.size()=" << mInitialFrame.mvKeysUn.size()
@@ -2760,6 +2750,7 @@ void Tracking::MonocularInitialization()
         {
             std::cout << "[DEBUG][MonoInit] 2-view reconstruction "
                     << (success ? "SUCCESS" : "FAILED")
+                    << "Frame Ids: " << mInitialFrame.mnId << ", " << mCurrentFrame.mnId
                     << "  triangulated=" << std::count(vbTriangulated.begin(),
                                                         vbTriangulated.end(), true)
                     << "  Tcw.z=" << Tcw.translation().z() << std::endl;
