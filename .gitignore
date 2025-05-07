@@ -89,4 +89,5 @@ datasets
 
 _trash/
 SuperPoint_SLAM/
-Vocabulary/SPvoc.dbow3
+Vocabulary/*
+!Vocabulary/.gitignore
