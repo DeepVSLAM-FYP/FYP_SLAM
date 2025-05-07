@@ -1642,9 +1642,11 @@ Sophus::SE3f Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, co
     return mCurrentFrame.GetPose();
 }
 
-
+// Todo: Overload  this function to accept keypoints and descriptors with the image
 Sophus::SE3f Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp, string filename)
 {
+
+    //the viewer retrieves the image from mImGray 
     mImGray = im;
     if(mImGray.channels()==3)
     {
@@ -1661,6 +1663,8 @@ Sophus::SE3f Tracking::GrabImageMonocular(const cv::Mat &im, const double &times
             cvtColor(mImGray,mImGray,cv::COLOR_BGRA2GRAY);
     }
 
+
+    //Todo: use overloaded Frame constructor to pass keypoints and descriptors
     if (mSensor == System::MONOCULAR)
     {
         if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET ||(lastID - initID) < mMaxFrames)

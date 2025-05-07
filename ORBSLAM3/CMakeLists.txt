@@ -88,6 +88,8 @@ target_link_libraries(Match_Visualizer
 add_library(Feature_Extractors SHARED
     src/FeatureExtractors/ORBextractor.cc
     src/FeatureExtractors/SIFTextractor.cc
+    src/FeatureExtractors/Dummy/Dummyextractor.cc
+    src/FeatureExtractors/Dummy/DummyAdapter.cpp
 )
 
 target_link_libraries( Feature_Extractors
