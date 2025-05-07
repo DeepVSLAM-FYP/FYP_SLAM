@@ -8,44 +8,47 @@
 
 namespace ORB_SLAM3 {
 
-    //Struct to hold the input queue item to the  feature extractor pipeline
-    struct InputQueueItem {
-        InputQueueItem() : index(0), timestamp(0.0) {}
-        InputQueueItem(
-            size_t idx, const double &ts, 
-            const std::string &imgName, const cv::Mat &img): index(idx), timestamp(ts), name(imgName), image(img) {}
-        size_t index;
-        const double &timestamp;
-        std::string name;
-        cv::Mat image;
-    };
+enum class FeatureExtractorType {
+    ORB,
+    SUPERPOINT,
+    CUSTOM
+    // Add more extractor types as needed
+};
 
+// Input queue item for the feature extractor pipeline
+struct InputQueueItem {
+    InputQueueItem() : index(0), timestamp(0.0) {}
+    InputQueueItem(
+        int idx, double ts, 
+        const std::string &fname, const cv::Mat &img)
+        : index(idx), timestamp(ts), filename(fname), image(img) {}
+    
+    int index;              // Image index in sequence
+    double timestamp;       // Timestamp of the image
+    std::string filename;   // Original filename path
+    cv::Mat image;          // Image data
+};
 
-    struct ResultQueueItem {
+// Result queue item containing extracted features
+struct ResultQueueItem {
+    ResultQueueItem() : index(0), timestamp(0.0) {}
+    ResultQueueItem(
+        int idx, double ts, 
+        const std::string &fname, const cv::Mat &img)
+        : index(idx), timestamp(ts), filename(fname), image(img) {}
 
-        ResultQueueItem() : index(0), timestamp(0.0) {}
-        ResultQueueItem(
-            size_t idx, const double &ts, 
-            const std::string &imgName, const cv::Mat &img): index(idx), timestamp(ts), name(imgName), image(img) {}
+    int index;                      // Image index in sequence
+    double timestamp;               // Timestamp of the image
+    std::string filename;           // Original filename path
+    cv::Mat image;                  // Image data
+    std::vector<cv::KeyPoint> keypoints;  // Extracted keypoints
+    cv::Mat descriptors;            // Feature descriptors
+    std::vector<int> lappingArea;   // For compatibility with ORB extractor
+};
 
-        size_t index;
-        const double &timestamp;
-        std::string name;
-        cv::Mat image;
-        std::vector<cv::KeyPoint> keypoints;
-        cv::Mat descriptors;
-    };
+// enum class NormType {
+//     HAMMING,  // For binary descriptors like ORB
+//     L2        // For floating-point descriptors like SIFT, SURF, etc.
+// };
 
-
-
-
-
-
-
-
-
-
-
-
-
-}
+} // namespace ORB_SLAM3

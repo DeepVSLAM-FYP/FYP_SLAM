@@ -187,6 +187,9 @@ public:
 
     float GetImageScale();
 
+    // Settings for the system
+    Settings* settings_;
+
 #ifdef REGISTER_TIMES
     void InsertRectTime(double& time);
     void InsertResizeTime(double& time);
@@ -262,7 +265,6 @@ private:
 
     string mStrVocabularyFilePath;
 
-    Settings* settings_;
 };
 
 }// namespace ORB_SLAM

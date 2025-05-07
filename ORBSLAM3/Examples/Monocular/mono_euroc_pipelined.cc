@@ -16,15 +16,18 @@
 * If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include<iostream>
-#include<algorithm>
-#include<fstream>
-#include<chrono>
-#include "utils/FeatureExtractorTypes.h"
-#include "utils/ThreadSafeQueue.h"
-#include<opencv2/core/core.hpp>
+#include <iostream>
+#include <algorithm>
+#include <fstream>
+#include <chrono>
+#include <thread>
 
-#include<System.h>
+#include <opencv2/core/core.hpp>
+
+#include <System.h>
+#include "utils/ThreadSafeQueue.h"
+#include "utils/FeatureExtractorTypes.h"
+#include "PipelinedFE/PipelinedProcessFactory.h"
 
 using namespace std;
 
@@ -35,7 +38,7 @@ int main(int argc, char **argv)
 {  
     if(argc < 5)
     {
-        cerr << endl << "Usage: ./mono_euroc path_to_vocabulary path_to_settings path_to_sequence_folder_1 path_to_times_file_1 (path_to_image_folder_2 path_to_times_file_2 ... path_to_image_folder_N path_to_times_file_N) (output_trajectory_file_dir)" << endl;
+        cerr << endl << "Usage: ./mono_euroc_pipelined path_to_vocabulary path_to_settings path_to_sequence_folder_1 path_to_times_file_1 (path_to_image_folder_2 path_to_times_file_2 ... path_to_image_folder_N path_to_times_file_N) (output_trajectory_file_dir)" << endl;
         return 1;
     }
 
@@ -81,163 +84,153 @@ int main(int argc, char **argv)
     int fps = 20;
     float dT = 1.f/fps;
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    ORB_SLAM3::System SLAM(argv[1],argv[2],ORB_SLAM3::System::MONOCULAR, true);
+    ORB_SLAM3::System SLAM(argv[1], argv[2], ORB_SLAM3::System::MONOCULAR, true);
+    float imageScale = SLAM.GetImageScale();
 
-    
+    // Queue sizes
+    const size_t INPUT_QUEUE_SIZE = 20;
+    const size_t OUTPUT_QUEUE_SIZE = 50;
 
+    // Process each sequence
     for (seq = 0; seq<num_seq; seq++)
     {
+        // Create thread-safe queues for our pipeline
+        ThreadSafeQueue<ORB_SLAM3::InputQueueItem> inputQueue(INPUT_QUEUE_SIZE);
+        ThreadSafeQueue<ORB_SLAM3::ResultQueueItem> outputQueue(OUTPUT_QUEUE_SIZE);
+        
+        // Create the feature extractor processor using the factory
+        auto featureProcessor = ORB_SLAM3::PipelinedProcessFactory::CreatePipelinedProcess(
+            ORB_SLAM3::FeatureExtractorType::ORB, 
+            inputQueue, 
+            outputQueue
+        );
+        
+        // Start the processor thread
+        featureProcessor->StartProcessing();
 
-        ThreadSafeQueue<ORB_SLAM3::InputQueueItem> input_queue(20);
-        ThreadSafeQueue<ORB_SLAM3::ResultQueueItem> output_queue(50);
-        int sq_length = nImages[seq];
-
-        //Producer thread reads the image name and pushes it to the input_queue
-        std::thread producer_thread([&SLAM, &sq_length, &seq, &vstrImageFilenames, &vTimestampsCam, &input_queue]() {
-                    // Main loop
+        // Create a producer thread to read images and fill the input queue
+        std::thread producerThread([&vstrImageFilenames, &vTimestampsCam, seq, &nImages, &inputQueue, imageScale, &SLAM]() {
             cv::Mat im;
-            int proccIm = 0;
-            float imageScale = SLAM.GetImageScale();
-            for(int ni=0; ni<sq_length; ni++, proccIm++)
+
+            // Process all images in the sequence
+            for(int ni=0; ni<nImages[seq]; ni++)
             {
 
+                std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
                 // Read image from file
-                im = cv::imread(vstrImageFilenames[seq][ni],cv::IMREAD_UNCHANGED); //,CV_LOAD_IMAGE_UNCHANGED);
+                im = cv::imread(vstrImageFilenames[seq][ni], cv::IMREAD_UNCHANGED);
                 double tframe = vTimestampsCam[seq][ni];
 
+                // Check if image is valid
                 if(im.empty())
                 {
-                    cerr << endl << "Failed to load image at: "
-                        <<  vstrImageFilenames[seq][ni] << endl;
-                    return 1;
+                    cerr << endl << "Failed to load image at: " << vstrImageFilenames[seq][ni] << endl;
+                    continue;
                 }
 
+                // Resize image if needed
                 if(imageScale != 1.f)
                 {
-#ifdef REGISTER_TIMES
-                    std::chrono::steady_clock::time_point t_Start_Resize = std::chrono::steady_clock::now();
-#endif
                     int width = im.cols * imageScale;
                     int height = im.rows * imageScale;
                     cv::resize(im, im, cv::Size(width, height));
-#ifdef REGISTER_TIMES
-                    std::chrono::steady_clock::time_point t_End_Resize = std::chrono::steady_clock::now();
-
-                    double t_resize = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(t_End_Resize - t_Start_Resize).count();
-                    SLAM.InsertResizeTime(t_resize);
-
-                    input_queue.enqueue(
-                        ORB_SLAM3::InputQueueItem{
-                            ni, 
-                            tframe, 
-                            vstrImageFilenames[seq][ni], 
-                            im}
-                        );
-#endif
+                }else if(SLAM.settings_ && SLAM.settings_->needToResize()){
+                    cv::resize(im, im, SLAM.settings_->newImSize());
                 }
 
+                // Create input item and enqueue
+                ORB_SLAM3::InputQueueItem item;
+                item.index = ni;
+                item.timestamp = tframe;
+                item.filename = vstrImageFilenames[seq][ni];
+                item.image = im.clone();
+                
+                inputQueue.enqueue(item);
+
+                std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
+                double imPush = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count();
+
+                // Wait to maintain original framerate
+                double T = 0;
+                if(ni < nImages[seq]-1)
+                    T = vTimestampsCam[seq][ni+1] - tframe;
+                else if(ni > 0)
+                    T = tframe - vTimestampsCam[seq][ni-1];
+                
+                if(imPush < T)
+                    usleep((T-imPush)*1e6);
             }
+            
+            // Signal that we're done producing items
+            inputQueue.shutdown();
         });
 
-        
-        //Process thread processes the images and pushes ORB_SLAM3::ResultQueueItem to the output queue
-
-
-        //Consumer thread is running in main thread and it consumes the output_queue and pushes the data to the SLAM system
-        size_t result_count = 0;
+        // Consumer (main thread) - process results from the processing thread
+        int processedFrames = 0;
         ORB_SLAM3::ResultQueueItem result;
-        int ni = 0;
-
-        while (output_queue.dequeue(result)) {
-
-            ni = result.index;
+        
+        while (outputQueue.dequeue(result)) 
+        {
+            int ni = result.index;
             double tframe = result.timestamp;
+            
             std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
-
+            
+            // Track using the SLAM system
             SLAM.TrackMonocular(result);
-
+            
             std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
-
-            #ifdef REGISTER_TIMES
-                double t_track = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(t2 - t1).count();
-                SLAM.InsertTrackTime(t_track);
-            #endif
+            double ttrack = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count();
+            vTimesTrack[ni] = ttrack;
             
-            double ttrack= std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1).count();
+            processedFrames++;
             
-            vTimesTrack[ni]=ttrack;
-            
-            // Wait to load the next frame
-            double T=0;
-            if(ni<nImages[seq]-1)
-                T = vTimestampsCam[seq][ni+1]-tframe;
-            else if(ni>0)
-                T = tframe-vTimestampsCam[seq][ni-1];
-            
-            //std::cout << "T: " << T << std::endl;
-            //std::cout << "ttrack: " << ttrack << std::endl;
-            
-            if(ttrack<T) {
-                //std::cout << "usleep: " << (dT-ttrack) << std::endl;
-                usleep((T-ttrack)*1e6); // 1e6
+            // Print progress
+            if (processedFrames % 50 == 0)
+            {
+                cout << "Processed " << processedFrames << "/" << nImages[seq] << " frames" << endl;
             }
         }
 
-        // Wait for the producer thread to finish
-        producer_thread.join();
-        // wait for process thread to finish
+        // Wait for the producer to finish
+        producerThread.join();
+        
+        // Stop the processor
+        featureProcessor->Stop();
 
+        // Handle map transitions between sequences
         if(seq < num_seq - 1)
         {
-            string kf_file_submap =  "./SubMaps/kf_SubMap_" + std::to_string(seq) + ".txt";
-            string f_file_submap =  "./SubMaps/f_SubMap_" + std::to_string(seq) + ".txt";
+            string kf_file_submap = "./SubMaps/kf_SubMap_" + std::to_string(seq) + ".txt";
+            string f_file_submap = "./SubMaps/f_SubMap_" + std::to_string(seq) + ".txt";
             SLAM.SaveTrajectoryEuRoC(f_file_submap);
             SLAM.SaveKeyFrameTrajectoryEuRoC(kf_file_submap);
 
             cout << "Changing the dataset" << endl;
-
             SLAM.ChangeDataset();
         }
-
     }
-    // Stop all threads
     
+    // Compute timing statistics
+    sort(vTimesTrack.begin(), vTimesTrack.end());
+    float totaltime = 0;
+    for(size_t ni=0; ni<vTimesTrack.size(); ni++)
+    {
+        totaltime += vTimesTrack[ni];
+    }
+    
+    cout << endl << "-------" << endl << endl;
+    cout << "median tracking time: " << vTimesTrack[vTimesTrack.size()/2] * 1000 << " ms" << endl;
+    cout << "mean tracking time: " << totaltime/vTimesTrack.size() * 1000 << " ms" << endl;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // Stop all threads
     SLAM.Shutdown();
 
     // Save camera trajectory
     if (bFileName)
     {
-        const string kf_file =  string(argv[argc-1]) + "KeyFrameTrajectory.txt";
-        const string f_file =  string(argv[argc-1]) +"CameraTrajectory.txt";
+        const string kf_file = string(argv[argc-1]) + "KeyFrameTrajectory.txt";
+        const string f_file = string(argv[argc-1]) + "CameraTrajectory.txt";
         SLAM.SaveTrajectoryEuRoC(f_file);
         SLAM.SaveKeyFrameTrajectoryEuRoC(kf_file);
     }
@@ -269,7 +262,6 @@ void LoadImages(const string &strImagePath, const string &strPathTimes,
             double t;
             ss >> t;
             vTimeStamps.push_back(t*1e-9);
-
         }
     }
 }
