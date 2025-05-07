@@ -20,7 +20,8 @@
 #include<algorithm>
 #include<fstream>
 #include<chrono>
-
+#include "utils/FeatureExtractorTypes.h"
+#include "utils/ThreadSafeQueue.h"
 #include<opencv2/core/core.hpp>
 
 #include<System.h>
@@ -81,79 +82,110 @@ int main(int argc, char **argv)
     float dT = 1.f/fps;
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
     ORB_SLAM3::System SLAM(argv[1],argv[2],ORB_SLAM3::System::MONOCULAR, true);
-    float imageScale = SLAM.GetImageScale();
 
-    double t_resize = 0.f;
-    double t_track = 0.f;
+    
 
     for (seq = 0; seq<num_seq; seq++)
     {
 
-        // Main loop
-        cv::Mat im;
-        int proccIm = 0;
-        for(int ni=0; ni<nImages[seq]; ni++, proccIm++)
-        {
+        ThreadSafeQueue<ORB_SLAM3::InputQueueItem> input_queue(20);
+        ThreadSafeQueue<ORB_SLAM3::ResultQueueItem> output_queue(50);
+        int sq_length = nImages[seq];
 
-            // Read image from file
-            im = cv::imread(vstrImageFilenames[seq][ni],cv::IMREAD_UNCHANGED); //,CV_LOAD_IMAGE_UNCHANGED);
-            double tframe = vTimestampsCam[seq][ni];
-
-            if(im.empty())
+        //Producer thread reads the image name and pushes it to the input_queue
+        std::thread producer_thread([&SLAM, &sq_length, &seq, &vstrImageFilenames, &vTimestampsCam, &input_queue]() {
+                    // Main loop
+            cv::Mat im;
+            int proccIm = 0;
+            float imageScale = SLAM.GetImageScale();
+            for(int ni=0; ni<sq_length; ni++, proccIm++)
             {
-                cerr << endl << "Failed to load image at: "
-                     <<  vstrImageFilenames[seq][ni] << endl;
-                return 1;
-            }
 
-            if(imageScale != 1.f)
-            {
+                // Read image from file
+                im = cv::imread(vstrImageFilenames[seq][ni],cv::IMREAD_UNCHANGED); //,CV_LOAD_IMAGE_UNCHANGED);
+                double tframe = vTimestampsCam[seq][ni];
+
+                if(im.empty())
+                {
+                    cerr << endl << "Failed to load image at: "
+                        <<  vstrImageFilenames[seq][ni] << endl;
+                    return 1;
+                }
+
+                if(imageScale != 1.f)
+                {
 #ifdef REGISTER_TIMES
-                std::chrono::steady_clock::time_point t_Start_Resize = std::chrono::steady_clock::now();
+                    std::chrono::steady_clock::time_point t_Start_Resize = std::chrono::steady_clock::now();
 #endif
-                int width = im.cols * imageScale;
-                int height = im.rows * imageScale;
-                cv::resize(im, im, cv::Size(width, height));
+                    int width = im.cols * imageScale;
+                    int height = im.rows * imageScale;
+                    cv::resize(im, im, cv::Size(width, height));
 #ifdef REGISTER_TIMES
-                std::chrono::steady_clock::time_point t_End_Resize = std::chrono::steady_clock::now();
+                    std::chrono::steady_clock::time_point t_End_Resize = std::chrono::steady_clock::now();
 
-                t_resize = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(t_End_Resize - t_Start_Resize).count();
-                SLAM.InsertResizeTime(t_resize);
+                    double t_resize = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(t_End_Resize - t_Start_Resize).count();
+                    SLAM.InsertResizeTime(t_resize);
+
+                    input_queue.enqueue(
+                        ORB_SLAM3::InputQueueItem{
+                            ni, 
+                            tframe, 
+                            vstrImageFilenames[seq][ni], 
+                            im}
+                        );
 #endif
-            }
+                }
 
+            }
+        });
+
+        
+        //Process thread processes the images and pushes ORB_SLAM3::ResultQueueItem to the output queue
+
+
+        //Consumer thread is running in main thread and it consumes the output_queue and pushes the data to the SLAM system
+        size_t result_count = 0;
+        ORB_SLAM3::ResultQueueItem result;
+        int ni = 0;
+
+        while (output_queue.dequeue(result)) {
+
+            ni = result.index;
+            double tframe = result.timestamp;
             std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
 
-            // Pass the image to the SLAM system
-            // cout << "tframe = " << tframe << endl;
-            SLAM.TrackMonocular(im,tframe); // TODO change to monocular_inertial
+            SLAM.TrackMonocular(result);
 
             std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
 
-#ifdef REGISTER_TIMES
-            t_track = t_resize + std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(t2 - t1).count();
-            SLAM.InsertTrackTime(t_track);
-#endif
-
+            #ifdef REGISTER_TIMES
+                double t_track = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(t2 - t1).count();
+                SLAM.InsertTrackTime(t_track);
+            #endif
+            
             double ttrack= std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1).count();
-
+            
             vTimesTrack[ni]=ttrack;
-
+            
             // Wait to load the next frame
             double T=0;
             if(ni<nImages[seq]-1)
                 T = vTimestampsCam[seq][ni+1]-tframe;
             else if(ni>0)
                 T = tframe-vTimestampsCam[seq][ni-1];
-
+            
             //std::cout << "T: " << T << std::endl;
             //std::cout << "ttrack: " << ttrack << std::endl;
-
+            
             if(ttrack<T) {
                 //std::cout << "usleep: " << (dT-ttrack) << std::endl;
                 usleep((T-ttrack)*1e6); // 1e6
             }
         }
+
+        // Wait for the producer thread to finish
+        producer_thread.join();
+        // wait for process thread to finish
 
         if(seq < num_seq - 1)
         {
@@ -170,10 +202,7 @@ int main(int argc, char **argv)
     }
     // Stop all threads
     
-    //Producer thread reads the image name and pushes it to the input queue
 
-    //Process thread processes the images and pushes (img + kpts + descriptors + name) to the output queue
-    
     
     
     

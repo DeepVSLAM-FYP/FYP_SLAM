@@ -9,28 +9,44 @@ MESSAGE("Build type: " ${CMAKE_BUILD_TYPE})
 
 # set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -Wall   -O3")
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall   -O3")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -O3")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wconversion-null -Wdeprecated")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -O3 -Wunused-result")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wconversion-null -Wdeprecated -Wunused-result")
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -march=native")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=native")
 
 set(PROJECT_ROOT_DIR "${PROJECT_SOURCE_DIR}/..")
 
-# Check C++11 or C++0x support
+# # Check C++11 or C++0x support
+# include(CheckCXXCompilerFlag)
+# CHECK_CXX_COMPILER_FLAG("-std=c++14" COMPILER_SUPPORTS_CXX14)
+# CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
+# if(COMPILER_SUPPORTS_CXX14)
+#    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
+#    add_definitions(-DCOMPILEDWITHC14)
+#    message(STATUS "Using flag -std=c++14.")
+# elseif(COMPILER_SUPPORTS_CXX11)
+#    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+#    add_definitions(-DCOMPILEDWITHC11)
+#    message(STATUS "Using flag -std=c++11.")
+# else()
+#    message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++14 support. Please use a different C++ compiler.")
+# endif()
+
+# Check C++17 support
 include(CheckCXXCompilerFlag)
-CHECK_CXX_COMPILER_FLAG("-std=c++14" COMPILER_SUPPORTS_CXX14)
-CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
-if(COMPILER_SUPPORTS_CXX14)
-   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
-   add_definitions(-DCOMPILEDWITHC14)
-   message(STATUS "Using flag -std=c++14.")
-elseif(COMPILER_SUPPORTS_CXX11)
-   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-   add_definitions(-DCOMPILEDWITHC11)
-   message(STATUS "Using flag -std=c++11.")
+CHECK_CXX_COMPILER_FLAG("-std=c++17" COMPILER_SUPPORTS_CXX17)
+
+if(COMPILER_SUPPORTS_CXX17)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+    add_definitions(-DCOMPILEDWITHC17)
+    message(STATUS "Using flag -std=c++17.")
 else()
-   message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++14 support. Please use a different C++ compiler.")
+    message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++17 support. Please use a different C++ compiler.")
 endif()
+
+
+
+
 
 
 # TODO: make the dep libraries to install .cmake files in the same directory and uncomment the following line
@@ -88,8 +104,8 @@ target_link_libraries(Match_Visualizer
 add_library(Feature_Extractors SHARED
     src/FeatureExtractors/ORBextractor.cc
     src/FeatureExtractors/SIFTextractor.cc
-    src/FeatureExtractors/Dummy/Dummyextractor.cc
-    src/FeatureExtractors/Dummy/DummyAdapter.cpp
+    # src/FeatureExtractors/Dummy/Dummyextractor.cc
+    # src/FeatureExtractors/Dummy/DummyAdapter.cpp
 )
 
 target_link_libraries( Feature_Extractors
@@ -158,6 +174,10 @@ add_executable(monoORB_euroc
         Examples/Monocular/mono_euroc.cc)
 target_link_libraries(monoORB_euroc ${PROJECT_NAME})
 
+
+add_executable(mono_euroc_pipelined
+        Examples/Monocular/mono_euroc_pipelined.cc)
+target_link_libraries(mono_euroc_pipelined ${PROJECT_NAME})
 
 #TODO: make these examples work
 # add_executable(monoORB_tum

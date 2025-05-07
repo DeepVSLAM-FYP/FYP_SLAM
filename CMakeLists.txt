@@ -42,7 +42,7 @@ endif()
 # Message about what's being built
 message(STATUS "Building:")
 if(BUILD_ORBSLAM3)
-  message(STATUS "  - ORB-SLAM3 (C++14)")
+  message(STATUS "  - ORB-SLAM3 (C++17)")
 endif()
 if(BUILD_XFEATSLAM)
   message(STATUS "  - XFeatSLAM (C++17)")

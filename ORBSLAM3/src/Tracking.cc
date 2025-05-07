@@ -1642,7 +1642,7 @@ Sophus::SE3f Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, co
     return mCurrentFrame.GetPose();
 }
 
-// Todo: Overload  this function to accept keypoints and descriptors with the image
+//  normal one
 Sophus::SE3f Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp, string filename)
 {
 
@@ -1663,8 +1663,6 @@ Sophus::SE3f Tracking::GrabImageMonocular(const cv::Mat &im, const double &times
             cvtColor(mImGray,mImGray,cv::COLOR_BGRA2GRAY);
     }
 
-
-    //Todo: use overloaded Frame constructor to pass keypoints and descriptors
     if (mSensor == System::MONOCULAR)
     {
         if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET ||(lastID - initID) < mMaxFrames)
@@ -1697,6 +1695,53 @@ Sophus::SE3f Tracking::GrabImageMonocular(const cv::Mat &im, const double &times
     if (std::getenv("DEBUG_GrabImageT") != nullptr )
     {
         std::cout << "[DEBUG][GrabImage] ts=" << std::fixed << timestamp
+                << " | FrameID=" << mCurrentFrame.mnId
+                << " | Keypoints=" << mCurrentFrame.N << '\n';
+    }
+
+    return mCurrentFrame.GetPose();
+}
+
+// pipelined one
+Sophus::SE3f Tracking::GrabImageMonocular(const ResultQueueItem& Input)
+{
+
+    //the viewer retrieves the image from mImGray 
+    mImGray = Input.image;
+    if(mImGray.channels()==3)
+    {
+        if(mbRGB)
+            cvtColor(mImGray,mImGray,cv::COLOR_RGB2GRAY);
+        else
+            cvtColor(mImGray,mImGray,cv::COLOR_BGR2GRAY);
+    }
+    else if(mImGray.channels()==4)
+    {
+        if(mbRGB)
+            cvtColor(mImGray,mImGray,cv::COLOR_RGBA2GRAY);
+        else
+            cvtColor(mImGray,mImGray,cv::COLOR_BGRA2GRAY);
+    }
+
+
+    //Only for monocular 
+    mCurrentFrame = Frame(Input,mpORBextractorLeft,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth);
+
+    if (mState==NO_IMAGES_YET)
+        t0=Input.timestamp;
+
+    mCurrentFrame.mNameFile = Input.name;
+    mCurrentFrame.mnDataset = mnNumDataset;
+
+#ifdef REGISTER_TIMES
+    vdORBExtract_ms.push_back(mCurrentFrame.mTimeORB_Ext);
+#endif
+
+    lastID = mCurrentFrame.mnId;
+    Track();
+    if (std::getenv("DEBUG_GrabImageT") != nullptr )
+    {
+        std::cout << "[DEBUG][GrabImage] ts=" << std::fixed << Input.timestamp
                 << " | FrameID=" << mCurrentFrame.mnId
                 << " | Keypoints=" << mCurrentFrame.N << '\n';
     }

@@ -384,8 +384,7 @@ Sophus::SE3f System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const
     return Tcw;
 }
 
-
-// Todo: Overload  this function to accept keypoints and descriptors with the image
+// Normal Version
 Sophus::SE3f System::TrackMonocular(const cv::Mat &im, const double &timestamp, const vector<IMU::Point>& vImuMeas, string filename)
 {
 
@@ -463,8 +462,80 @@ Sophus::SE3f System::TrackMonocular(const cv::Mat &im, const double &timestamp, 
     return Tcw;
 }
 
+// Pipelined Version
+Sophus::SE3f System::TrackMonocular(const ResultQueueItem& Input){
 
-
+    {
+            unique_lock<mutex> lock(mMutexReset);
+            if(mbShutDown)
+                return Sophus::SE3f();
+        }
+    
+        if(mSensor!=MONOCULAR)
+        {
+            cerr << "ERROR: you called TrackMonocular but input sensor was not set to Monocular nor Monocular-Inertial." << endl;
+            exit(-1);
+        }
+    
+        //Todo: check resize happening at the beginning     
+        // if(settings_ && settings_->needToResize()){
+        //     cv::Mat resizedIm;
+        //     cv::resize(im,resizedIm,settings_->newImSize());
+        //     imToFeed = resizedIm;
+        // }
+    
+        // Check mode change
+        {
+            unique_lock<mutex> lock(mMutexMode);
+            if(mbActivateLocalizationMode)
+            {
+                mpLocalMapper->RequestStop();
+    
+                // Wait until Local Mapping has effectively stopped
+                while(!mpLocalMapper->isStopped())
+                {
+                    usleep(1000);
+                }
+    
+                mpTracker->InformOnlyTracking(true);
+                mbActivateLocalizationMode = false;
+            }
+            if(mbDeactivateLocalizationMode)
+            {
+                mpTracker->InformOnlyTracking(false);
+                mpLocalMapper->Release();
+                mbDeactivateLocalizationMode = false;
+            }
+        }
+    
+        // Check reset
+        {
+            unique_lock<mutex> lock(mMutexReset);
+            if(mbReset)
+            {
+                mpTracker->Reset();
+                mbReset = false;
+                mbResetActiveMap = false;
+            }
+            else if(mbResetActiveMap)
+            {
+                cout << "SYSTEM-> Reseting active map in monocular case" << endl;
+                mpTracker->ResetActiveMap();
+                mbResetActiveMap = false;
+            }
+        }
+    
+        Sophus::SE3f Tcw = mpTracker->GrabImageMonocular(Input);
+    
+        unique_lock<mutex> lock2(mMutexState);
+        mTrackingState = mpTracker->mState;
+        mTrackedMapPoints = mpTracker->mCurrentFrame.mvpMapPoints;
+        mTrackedKeyPointsUn = mpTracker->mCurrentFrame.mvKeysUn;
+    
+        return Tcw;
+    
+    }
+    
 void System::ActivateLocalizationMode()
 {
     unique_lock<mutex> lock(mMutexMode);

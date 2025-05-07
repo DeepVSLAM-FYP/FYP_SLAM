@@ -37,6 +37,7 @@
 #include "ImuTypes.h"
 #include "Settings.h"
 #include "GlobalFeatureExtractorType.h"
+#include "utils/FeatureExtractorTypes.h"
 #include "MatchVisualizer.h"
 #include "GeometricCamera.h"
 
@@ -73,6 +74,7 @@ public:
     Sophus::SE3f GrabImageStereo(const cv::Mat &imRectLeft,const cv::Mat &imRectRight, const double &timestamp, string filename);
     Sophus::SE3f GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const double &timestamp, string filename);
     Sophus::SE3f GrabImageMonocular(const cv::Mat &im, const double &timestamp, string filename);
+    Sophus::SE3f GrabImageMonocular(const ResultQueueItem& Input);
 
     void GrabImuData(const IMU::Point &imuMeasurement);
 
