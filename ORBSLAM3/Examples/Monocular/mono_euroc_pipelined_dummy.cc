@@ -242,7 +242,7 @@ int main(int argc, char **argv)
                 
                 // Display the image with keypoints
                 cv::imshow("Keypoints", imWithKeypoints);
-                cv::waitKey(30); // Wait for 10ms to allow window to update
+                cv::waitKey(5); // Wait for 10ms to allow window to update
 
                 // std::cout << "[DEBUG] KeypointVisualization  frame=" << ni 
                 //         << "  keypoints=" << result.keypoints.size() 

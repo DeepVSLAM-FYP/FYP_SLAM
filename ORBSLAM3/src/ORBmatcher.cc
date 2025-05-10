@@ -44,6 +44,7 @@ namespace ORB_SLAM3
     {
     }
 
+    // Used in Tracking::SearchLocalPoints to match more map points
     int ORBmatcher::SearchByProjection(Frame &F, const vector<MapPoint *> &vpMapPoints, const float th, const bool bFarPoints, const float thFarPoints)
     {
         int nmatches = 0, left = 0, right = 0;
@@ -79,9 +80,9 @@ namespace ORB_SLAM3
                 {
                     const cv::Mat MPdescriptor = pMP->GetDescriptor();
 
-                    float bestDist = 256.0f;
+                    float bestDist = std::numeric_limits<float>::max();
                     int bestLevel = -1;
-                    float bestDist2 = 256.0f;
+                    float bestDist2 = std::numeric_limits<float>::max();
                     int bestLevel2 = -1;
                     int bestIdx = -1;
 
@@ -112,14 +113,14 @@ namespace ORB_SLAM3
                             bestLevel2 = bestLevel;
                             bestLevel = (F.Nleft == -1)   ? F.mvKeysUn[idx].octave
                                         : (idx < F.Nleft) ? F.mvKeys[idx].octave
-                                                          : F.mvKeysRight[idx - F.Nleft].octave;
+                                                        : F.mvKeysRight[idx - F.Nleft].octave;
                             bestIdx = idx;
                         }
                         else if (dist < bestDist2)
                         {
                             bestLevel2 = (F.Nleft == -1)   ? F.mvKeysUn[idx].octave
-                                         : (idx < F.Nleft) ? F.mvKeys[idx].octave
-                                                           : F.mvKeysRight[idx - F.Nleft].octave;
+                                        : (idx < F.Nleft) ? F.mvKeys[idx].octave
+                                                          : F.mvKeysRight[idx - F.Nleft].octave;
                             bestDist2 = dist;
                         }
                     }
@@ -1002,7 +1003,7 @@ namespace ORB_SLAM3
     }
 
     int ORBmatcher::SearchForTriangulation(KeyFrame *pKF1, KeyFrame *pKF2,
-                                           vector<pair<size_t, size_t>> &vMatchedPairs, const bool bOnlyStereo, const bool bCoarse)
+                                        vector<pair<size_t, size_t>> &vMatchedPairs, const bool bOnlyStereo, const bool bCoarse)
     {
         const fbow::BoWFeatVector &vFeatVec1 = pKF1->mFeatVec;
         const fbow::BoWFeatVector &vFeatVec2 = pKF2->mFeatVec;
@@ -2156,12 +2157,12 @@ namespace ORB_SLAM3
         if (std::getenv("DEBUG_SearchByProjectionFrame"))
         {
             std::cout << "[DEBUG] SearchByProjectionKF  "
-                      << "CurrentF id=" << CurrentFrame.mnId
-                      << "  baseKF id=" << pKF->mnId
-                      << "  matches=" << nmatches
-                      << "  th=" << th
-                      << "  ORBdist=" << ORBdist
-                      << std::endl;
+                    << "CurrentF id=" << CurrentFrame.mnId
+                    << "  baseKF id=" << pKF->mnId
+                    << "  matches=" << nmatches
+                    << "  th=" << th
+                    << "  ORBdist=" << ORBdist
+                    << std::endl;
         }
         return nmatches;
     }

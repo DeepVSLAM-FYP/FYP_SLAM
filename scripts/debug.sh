@@ -19,6 +19,7 @@ unset DEBUG_DescriptorDistance
 unset DEBUG_ComputeThreeMaxima
 unset DEBUG_DISTANCE
 unset DEBUG_TrackT
+unset DEBUG_TrackWithMM
 unset DEBUG_NeedNewKeyFrameT
 unset DEBUG_CreateNewKeyFrameT
 unset DEBUG_SearchLocalPointsT
@@ -51,7 +52,8 @@ export DEBUG_SearchByProjectionFrame=1
 
 #Tracking.cc
 # --- Main tracking process ---
-# export DEBUG_TrackT=1                              # Debug information at the end of Track()
+export DEBUG_TrackT=1                              # Debug information at the end of Track()
+export DEBUG_TrackWithMM=1
 # export DEBUG_NeedNewKeyFrameT=1                    # Debug whether a new keyframe is needed
 # export DEBUG_CreateNewKeyFrameT=1                  # Debug keyframe creation
 # export DEBUG_SearchLocalPointsT=1                  # Debug local point searching process
