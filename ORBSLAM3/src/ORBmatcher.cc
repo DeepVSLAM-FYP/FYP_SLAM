@@ -227,7 +227,6 @@ namespace ORB_SLAM3
                       << "  TH_LOW=" << TH_LOW
                       << "  TH_HIGH=" << TH_HIGH
                       << std::endl;
-            std::cout << "[DEBUG] SearchByProjection END" << std::endl;
         }
 
         return nmatches;
@@ -448,7 +447,6 @@ namespace ORB_SLAM3
                       << "  KF id=" << pKF->mnId
                       << "  Frame id=" << F.mnId
                       << std::endl;
-            std::cout << "[DEBUG] SearchByBoW END" << std::endl;
         }
 
         return nmatches;
@@ -563,7 +561,6 @@ namespace ORB_SLAM3
                       << "  candidates=" << vpPoints.size()
                       << "  matches=" << nmatches
                       << std::endl;
-            std::cout << "[DEBUG] SearchByProjectionKF END" << std::endl;
         }
 
         return nmatches;
@@ -685,7 +682,6 @@ namespace ORB_SLAM3
                       << "  candidates=" << vpPoints.size()
                       << "  matches=" << nmatches
                       << std::endl;
-            std::cout << "[DEBUG] SearchByProjectionKF END" << std::endl;
         }
 
         return nmatches;
@@ -705,9 +701,9 @@ namespace ORB_SLAM3
         vector<int> vnMatches21(F2.mvKeysUn.size(), -1);
 
         // For collecting stats on descriptor distances
-        const int NUM_DIST_BINS = 10;
+        const int NUM_DIST_BINS = 20;
         vector<int> distanceBins(NUM_DIST_BINS, 0);
-        const float binSize = TH_HIGH / float(NUM_DIST_BINS - 1); // Last bin for distances > TH_HIGH
+        const float binSize = 1.0 / float(NUM_DIST_BINS - 1); // Last bin for distances > TH_HIGH
 
         for (size_t i1 = 0, iend1 = F1.mvKeysUn.size(); i1 < iend1; i1++)
         {
@@ -768,6 +764,8 @@ namespace ORB_SLAM3
                     if (std::getenv("DEBUG_SearchForInitialization"))
                     {
                         int bin = std::min(int(bestDist / binSize), NUM_DIST_BINS - 1);
+                        if (bestDist > 1.0)
+                            std::cout << " Distance more than 1.0: " << bestDist << std::endl;
                         distanceBins[bin]++;
                     }
 
@@ -827,11 +825,6 @@ namespace ORB_SLAM3
 
         if (std::getenv("DEBUG_SearchForInitialization"))
         {
-            std::cout << "[DEBUG] SearchForInitialization  nmatches=" << nmatches
-                      << "  F1 id=" << F1.mnId
-                      << "  F2 id=" << F2.mnId
-                      << std::endl;
-
             // Print histogram of descriptor distances
             std::cout << "[DEBUG] Descriptor distance distribution:" << std::endl;
             for (int i = 0; i < NUM_DIST_BINS - 1; i++)
@@ -844,7 +837,12 @@ namespace ORB_SLAM3
             std::cout << "Unmatched points F1: " << vnMatches12.size() - nmatches << " | "
                       << "Unmatched points F2: " << vMatchedDistance.size() - nmatches << std::endl;
             std::cout << "Total matches: " << nmatches << std::endl;
-            std::cout << "[DEBUG] SearchForInitialization END" << std::endl;
+
+            std::cout << "--------------------------------------------------------------------------" << std::endl;
+            std::cout << "[DEBUG] SearchForInitialization  nmatches=" << nmatches
+                    << "  F1 id=" << F1.mnId
+                    << "  F2 id=" << F2.mnId
+                    << std::endl;
         }
 
         return nmatches;
@@ -998,7 +996,6 @@ namespace ORB_SLAM3
                       << "  KF1 id=" << pKF1->mnId
                       << "  KF2 id=" << pKF2->mnId
                       << std::endl;
-            std::cout << "[DEBUG] SearchByBoW END" << std::endl;
         }
 
         return nmatches;
@@ -1254,7 +1251,6 @@ namespace ORB_SLAM3
                       << "  KF1 id=" << pKF1->mnId
                       << "  KF2 id=" << pKF2->mnId
                       << std::endl;
-            std::cout << "[DEBUG] SearchForTriangulation END" << std::endl;
         }
 
         return nmatches;
@@ -1458,7 +1454,6 @@ namespace ORB_SLAM3
                       << "  tried=" << vpMapPoints.size()
                       << "  fused=" << nFused
                       << std::endl;
-            std::cout << "[DEBUG] Fuse END" << std::endl;
         }
 
         return nFused;
@@ -1584,7 +1579,6 @@ namespace ORB_SLAM3
                       << "  tried=" << vpPoints.size()
                       << "  fused=" << nFused
                       << std::endl;
-            std::cout << "[DEBUG] Fuse END" << std::endl;
         }
         return nFused;
     }
@@ -1811,7 +1805,6 @@ namespace ORB_SLAM3
                       << "  KF2=" << pKF2->mnId
                       << "  matches=" << nFound
                       << std::endl;
-            std::cout << "[DEBUG] SearchBySim3 END" << std::endl;
         }
 
         return nFound;
@@ -2036,7 +2029,6 @@ namespace ORB_SLAM3
                       << "  th=" << th
                       << "  bMono=" << (bMono ? "true" : "false")
                       << std::endl;
-            std::cout << "[DEBUG] SearchByProjectionFrame END" << std::endl;
         }
 
         return nmatches;
@@ -2170,7 +2162,6 @@ namespace ORB_SLAM3
                       << "  th=" << th
                       << "  ORBdist=" << ORBdist
                       << std::endl;
-            std::cout << "[DEBUG] SearchByProjectionFrame END" << std::endl;
         }
         return nmatches;
     }
@@ -2221,7 +2212,6 @@ namespace ORB_SLAM3
         {
             std::cout << "[DEBUG] ComputeThreeMaxima  ind1=" << ind1
                       << " ind2=" << ind2 << " ind3=" << ind3 << std::endl;
-            std::cout << "[DEBUG] ComputeThreeMaxima END" << std::endl;
         }
     }
 
@@ -2272,7 +2262,6 @@ namespace ORB_SLAM3
             std::cout << "[DEBUG] DescriptorDistance "
                       << ((a.type() == CV_8U) ? "HAMMING" : "L2²")
                       << "  dist=" << dist << std::endl;
-            std::cout << "[DEBUG] DescriptorDistance END" << std::endl;
         }
 
         return dist;

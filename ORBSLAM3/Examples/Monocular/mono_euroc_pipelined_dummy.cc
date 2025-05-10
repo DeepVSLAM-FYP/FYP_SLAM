@@ -242,16 +242,16 @@ int main(int argc, char **argv)
                 
                 // Display the image with keypoints
                 cv::imshow("Keypoints", imWithKeypoints);
-                cv::waitKey(50); // Wait for 10ms to allow window to update
+                cv::waitKey(30); // Wait for 10ms to allow window to update
 
-                std::cout << "[DEBUG] KeypointVisualization  frame=" << ni 
-                        << "  keypoints=" << result.keypoints.size() 
-                        << std::endl;
+                // std::cout << "[DEBUG] KeypointVisualization  frame=" << ni 
+                //         << "  keypoints=" << result.keypoints.size() 
+                //         << std::endl;
                 // std::cout << "[DEBUG] KeypointVisualization END" << std::endl;
             } 
 
             // Track using the SLAM system
-            // SLAM.TrackMonocular(result);
+            SLAM.TrackMonocular(result);
 
             std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
             double ttrack = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count();

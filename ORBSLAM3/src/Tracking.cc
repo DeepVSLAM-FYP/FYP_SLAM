@@ -2021,10 +2021,10 @@ namespace ORB_SLAM3
                 mlQueueImuData.clear();
                 CreateMapInAtlas();
 
-                // ---- DEBUG block (end of Track()) ---------------------------------
+                // ---- DEBUG block: if frame with old timestamp is detected
                 if (std::getenv("DEBUG_TrackT") != nullptr)
                 {
-                    std::cout << "\n[DEBUG][Track] BEGIN ---------\n";
+                    std::cout << "\n[DEBUG][Track] Timestamp problem detected..." << '\n';
                     std::cout << " FrameID             : " << mCurrentFrame.mnId << '\n';
                     std::cout << " Sensor state        : " << mState << '\n';
                     std::cout << " Matches / inliers   : " << mnMatchesInliers << '\n';
@@ -2032,7 +2032,6 @@ namespace ORB_SLAM3
                     std::cout << " Local KFs (#)       : " << mvpLocalKeyFrames.size() << '\n';
                     std::cout << " Candidate KF needed : " << NeedNewKeyFrame() << '\n';
                     std::cout << " ---------------------------------------------------\n";
-                    std::cout << "[DEBUG][Track] END\n";
                 }
 
                 return;
@@ -2071,6 +2070,12 @@ namespace ORB_SLAM3
 
         if (mState == NO_IMAGES_YET)
         {
+            // ---- DEBUG block: if no images yet
+            if (std::getenv("DEBUG_TrackT") != nullptr)
+            {
+                std::cout << "\n[DEBUG][Track] Frame ID: " << mCurrentFrame.mnId << "  mState = No images yet " << '\n';
+            }
+            // ---- DEBUG block: if no images yet
             mState = NOT_INITIALIZED;
         }
 
@@ -2112,6 +2117,11 @@ namespace ORB_SLAM3
             }
             else
             {
+                // ---- DEBUG block: if monocular initialization
+                if (std::getenv("DEBUG_TrackT") != nullptr)
+                {
+                    std::cout << "\n[DEBUG][Track] Frame ID: " << mCurrentFrame.mnId << "  Running MonocularInitialization() " << '\n';
+                }
                 MonocularInitialization();
             }
 
@@ -2119,18 +2129,40 @@ namespace ORB_SLAM3
 
             if (mState != OK) // If rightly initialized, mState=OK
             {
+                // ---- DEBUG block: if monocular initialization failed
+                if (std::getenv("DEBUG_TrackT") != nullptr)
+                {
+                    std::cout << "\n[DEBUG][Track] Frame ID: " << mCurrentFrame.mnId << "  MonocularInitialization() failed " << '\n';
+                }
                 mLastFrame = Frame(mCurrentFrame);
                 return;
             }
 
+            // ---- DEBUG block: if monocular initialization succeeded
+            if (std::getenv("DEBUG_TrackT") != nullptr)
+            {
+                std::cout << "\n[DEBUG][Track] Frame ID: " << mCurrentFrame.mnId << "  MonocularInitialization() succeeded " << '\n';
+            }
+
             if (mpAtlas->GetAllMaps().size() == 1)
             {
+                // ---- DEBUG block: if monocular initialization succeeded and first frame
+                if (std::getenv("DEBUG_TrackT") != nullptr)
+                {
+                    std::cout << "\n[DEBUG][Track] Frame ID: " << mCurrentFrame.mnId << "  First frame " << '\n';
+                }
                 mnFirstFrameId = mCurrentFrame.mnId;
             }
         }
         else
         {
             // System is initialized. Track Frame.
+            // Step 6: System successfully initialized, below is the specific tracking process
+            if (std::getenv("DEBUG_TrackT") != nullptr)
+            {
+                std::cout << "\n[DEBUG][Track] Frame ID: " << mCurrentFrame.mnId << "  Tracking frame " << '\n';
+            }
+
             bool bOK;
 
 #ifdef REGISTER_TIMES
@@ -2138,33 +2170,61 @@ namespace ORB_SLAM3
 #endif
 
             // Initial camera pose estimation using motion model or relocalization (if tracking is lost)
+            // mbOnlyTracking is false means normal SLAM mode (localization + map update), mbOnlyTracking is true means localization-only mode
+            // tracking class constructor default is false. There's a switch ActivateLocalizationMode in viewer that can control whether to enable mbOnlyTracking
             if (!mbOnlyTracking)
             {
 
                 // State OK
                 // Local Mapping is activated. This is the normal behaviour, unless
                 // you explicitly activate the "only tracking" mode.
+                // Tracking enters normal SLAM mode with map updates
+
+
                 if (mState == OK)
                 {
 
                     // Local Mapping might have changed some MapPoints tracked in last frame
+                    // Step 6.1 Check and update MapPoints replaced in the last frame
+                    // Local mapping thread may replace original map points. Check here
                     CheckReplacedInLastFrame();
 
+                    // Step 6.2 If motion model is empty and IMU is not initialized or just after relocalization, track reference keyframe; otherwise use constant velocity model
+                    // First condition: if motion model is empty and IMU is not initialized, it means this is the first frame to track or tracking has been lost.
+                    // Second condition: if current frame is right after relocalization frame, we use relocalization frame to recover pose
+                    // mnLastRelocFrameId is the frame of last relocalization
                     if ((!mbVelocity && !pCurrentMap->isImuInitialized()) || mCurrentFrame.mnId < mnLastRelocFrameId + 2)
                     {
+
                         Verbose::PrintMess("TRACK: Track with respect to the reference KF ", Verbose::VERBOSITY_DEBUG);
                         bOK = TrackReferenceKeyFrame();
+                        if (std::getenv("DEBUG_TrackT") != nullptr)
+                        {
+                            std::cout << "\n[DEBUG][Track] Frame ID: " << mCurrentFrame.mnId << "  [TrackReferenceKeyFrame] " << " tracked: " << bOK << '\n';
+                        }
                     }
                     else
                     {
                         Verbose::PrintMess("TRACK: Track with motion model", Verbose::VERBOSITY_DEBUG);
+                        // Track using constant velocity model. Constant velocity means assuming pose change from previous to current frame equals pose change from frame before previous to previous frame
                         bOK = TrackWithMotionModel();
-                        if (!bOK)
+                        if (std::getenv("DEBUG_TrackT") != nullptr)
+                        {
+                            std::cout << "\n[DEBUG][Track] Frame ID: " << mCurrentFrame.mnId << "  [TrackWithMotionModel] " << " tracked: " << bOK << '\n';
+                        }
+                        if (!bOK){
                             bOK = TrackReferenceKeyFrame();
+                            if (std::getenv("DEBUG_TrackT") != nullptr)
+                            {
+                                std::cout << "\n Motionmodel failed | Frame ID: " << mCurrentFrame.mnId << "  [TrackReferenceKeyFrame] " << " tracked: " << bOK << '\n';
+                            }
+                        }
                     }
 
+                    // Added a new state RECENTLY_LOST, mainly to see if IMU can pull it back
                     if (!bOK)
                     {
+                        // Condition 1: If current frame is less than 1s from last successful relocalization
                         if (mCurrentFrame.mnId <= (mnLastRelocFrameId + mnFramesToResetIMU) &&
                             (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD))
                         {
@@ -2174,65 +2234,116 @@ namespace ORB_SLAM3
                         {
                             // cout << "KF in map: " << pCurrentMap->KeyFramesInMap() << endl;
                             mState = RECENTLY_LOST;
+                            // Record time of loss
                             mTimeStampLost = mCurrentFrame.mTimeStamp;
+                            if (std::getenv("DEBUG_TrackT") != nullptr)
+                            {
+                                std::cout << "\n[DEBUG][Track] Frame ID: " << mCurrentFrame.mnId << "  [RECENTLY_LOST] " << '\n';
+                            }
                         }
                         else
                         {
+
                             mState = LOST;
                         }
                     }
                 }
-                else
+                else  // Handle abnormal tracking as follows
                 {
-
+                    // If state is RECENTLY_LOST
                     if (mState == RECENTLY_LOST)
                     {
                         Verbose::PrintMess("Lost for a short time", Verbose::VERBOSITY_NORMAL);
-
+                        // Set bOK to true first
                         bOK = true;
                         if ((mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD))
                         {
+                            // In IMU mode, IMU can be used to predict pose to try to recover
+                            // Step 6.4 If IMU has been successfully initialized in current map, use IMU data to predict pose
                             if (pCurrentMap->isImuInitialized())
+                            {
+                                if (std::getenv("DEBUG_TrackT") != nullptr)
+                                {
+                                    std::cout << "\n[DEBUG][Track] Frame ID: " << mCurrentFrame.mnId << "  [PredictStateIMU] " << '\n';
+                                }
                                 PredictStateIMU();
+                            }
                             else
+                            {
                                 bOK = false;
+                            }
 
+                            // If in IMU mode current frame is more than 5s from the lost frame (time_recently_lost default is 5s)
+                            // Give up, change RECENTLY_LOST state to LOST
                             if (mCurrentFrame.mTimeStamp - mTimeStampLost > time_recently_lost)
                             {
                                 mState = LOST;
                                 Verbose::PrintMess("Track Lost...", Verbose::VERBOSITY_NORMAL);
+                                if (std::getenv("DEBUG_TrackT") != nullptr)
+                                {
+                                    std::cout << "\n[DEBUG][Track] Frame ID: " << mCurrentFrame.mnId << "  [LOST] " << '\n';
+                                }
                                 bOK = false;
                             }
                         }
                         else
                         {
+                            // Step 6.5 In pure vision mode, perform relocalization. Mainly using BOW search and EPnP for pose solving
                             // Relocalization
                             bOK = Relocalization();
                             // std::cout << "mCurrentFrame.mTimeStamp:" << to_string(mCurrentFrame.mTimeStamp) << std::endl;
                             // std::cout << "mTimeStampLost:" << to_string(mTimeStampLost) << std::endl;
+                            if (std::getenv("DEBUG_TrackT") != nullptr)
+                            {
+                                std::cout << "\n[DEBUG][Track] Frame ID: " << mCurrentFrame.mnId << "  [Relocalization] " << " Relocalized: " << bOK << '\n';
+                            }
                             if (mCurrentFrame.mTimeStamp - mTimeStampLost > 3.0f && !bOK)
                             {
+                                // In pure vision mode, if relocalization fails, state is LOST
                                 mState = LOST;
                                 Verbose::PrintMess("Track Lost...", Verbose::VERBOSITY_NORMAL);
                                 bOK = false;
                             }
                         }
                     }
-                    else if (mState == LOST)
+                    else if (mState == LOST)  // When previous frame was recently lost and relocalization failed
                     {
-
+                        // Step 6.6 If state is LOST
+                        // Start a new map
                         Verbose::PrintMess("A new map is started...", Verbose::VERBOSITY_NORMAL);
+                        if (std::getenv("DEBUG_TrackT") != nullptr)
+                        {
+                            std::cout << "\n[DEBUG][Track] Frame ID: " << mCurrentFrame.mnId << "  [LOST] " << '\n';
+                        }
 
                         if (pCurrentMap->KeyFramesInMap() < 10)
                         {
+                            // If current map has fewer than 10 keyframes, reset current map
                             mpSystem->ResetActiveMap();
                             Verbose::PrintMess("Reseting current map...", Verbose::VERBOSITY_NORMAL);
+                            if (std::getenv("DEBUG_TrackT") != nullptr)
+                            {
+                                std::cout << "\n[DEBUG][Track] Frame ID: " << mCurrentFrame.mnId << "  [ResetActiveMap] " << '\n';
+                            }
                         }
                         else
-                            CreateMapInAtlas();
+                        {
+                            CreateMapInAtlas();// If current map has more than 10 keyframes, create new map
+                            // Remove previous keyframe
+                            if(std::getenv("DEBUG_TrackT") != nullptr)
+                            {
+                                std::cout << "\n[DEBUG][Track] Frame ID: " << mCurrentFrame.mnId << "  [CreateMapInAtlas] " << '\n';
+                            }
+                        }
 
                         if (mpLastKeyFrame)
+                        {
                             mpLastKeyFrame = static_cast<KeyFrame *>(NULL);
+                            if (std::getenv("DEBUG_TrackT") != nullptr)
+                            {
+                                std::cout << "\n[DEBUG][Track] Frame ID: " << mCurrentFrame.mnId << "  Remove previous keyframe " << '\n';
+                            }
+                        }
 
                         Verbose::PrintMess("done", Verbose::VERBOSITY_NORMAL);
 
@@ -2240,9 +2351,14 @@ namespace ORB_SLAM3
                     }
                 }
             }
-            else
+            else // Localization-only mode
             {
+                if (std::getenv("DEBUG_TrackT") != nullptr)
+                {
+                    std::cout << "\n[DEBUG][Track] Frame ID: " << mCurrentFrame.mnId << "  Localization-only mode " << '\n';
+                }
                 // Localization Mode: Local Mapping is deactivated (TODO Not available in inertial mode)
+                // Only perform tracking, local map does not work
                 if (mState == LOST)
                 {
                     if (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
@@ -2312,6 +2428,8 @@ namespace ORB_SLAM3
                 }
             }
 
+            // Use the latest keyframe as the reference keyframe for current frame
+            // mpReferenceKF is first the reference keyframe from previous moment, if current is a new keyframe it becomes current keyframe, if not a new keyframe it's first previous frame's reference keyframe, then redetermined after updating local keyframes
             if (!mCurrentFrame.mpReferenceKF)
                 mCurrentFrame.mpReferenceKF = mpReferenceKF;
 
@@ -2325,29 +2443,73 @@ namespace ORB_SLAM3
 #ifdef REGISTER_TIMES
             std::chrono::steady_clock::time_point time_StartLMTrack = std::chrono::steady_clock::now();
 #endif
+
+            // Step 7 After tracking to get initial pose of current frame, now track local map to get more matches and optimize current pose
+            // Previous tracking only tracked one frame to get initial pose, here we search local keyframes, local map points, and match with current frame to get more matched MapPoints, then optimize pose
+            // After frame-to-frame matching to get initial pose, now track local map to get more matches and optimize current pose
+            // local map: current frame, current frame's MapPoints, co-visibility relationship between current keyframe and other keyframes
+            // Previously mainly tracked pairs (constant velocity model tracking previous frame, tracking reference frame), here search local keyframes then collect all local MapPoints,
+            // then project local MapPoints to current frame for matching, optimize pose after getting more matched MapPoints
             // If we have an initial estimation of the camera pose and matching. Track the local map.
-            if (!mbOnlyTracking)
+            if(!mbOnlyTracking)
             {
-                if (bOK)
+                if(bOK)
                 {
+                    // Track local map
                     bOK = TrackLocalMap();
+                    if (std::getenv("DEBUG_TrackT") != nullptr)
+                    {
+                        std::cout << "\n[DEBUG][Track] Frame ID: " << mCurrentFrame.mnId << "  [TrackLocalMap] " << " Tracked: " << bOK << '\n';
+                    }
                 }
-                if (!bOK)
+                if(!bOK)
+                {
                     cout << "Fail to track local map!" << endl;
+                }
             }
             else
             {
                 // mbVO true means that there are few matches to MapPoints in the map. We cannot retrieve
                 // a local map and therefore we do not perform TrackLocalMap(). Once the system relocalizes
                 // the camera we will use the local map again.
-                if (bOK && !mbVO)
+                if(bOK && !mbVO)
                     bOK = TrackLocalMap();
-            }
 
-            if (bOK)
+                if(std::getenv("DEBUG_TrackT") != nullptr)
+                {
+                    std::cout << "\n[DEBUG][Track] Frame ID: " << mCurrentFrame.mnId << "  [TrackLocalMap] " << " Tracked: " << bOK << '\n';
+                }
+            }
+            // At this point, tracking to determine pose phase ends, below starts wrap-up work and preparation for next frame
+
+            // Looking at the two state changes up to this point
+            // bOK historical changes---last frame tracking successful---current frame tracking successful---local map tracking successful---true
+            //          \               \              \---local map tracking failed---false
+            //           \               \---current frame tracking failed---false
+            //            \---last frame tracking failed---relocalization successful---local map tracking successful---true
+            //                          \           \---local map tracking failed---false
+            //                           \---relocalization failed---false
+
+            // mState historical changes---last frame tracking successful---current frame tracking successful---local map tracking successful---OK
+            //            \               \              \---local map tracking failed---non-OK（in IMU mode RECENTLY_LOST）
+            //             \               \---current frame tracking failed---non-OK(when map has more than 10 keyframes RECENTLY_LOST)
+            //              \---last frame tracking failed(RECENTLY_LOST)---relocalization successful---local map tracking successful---OK
+            //               \                           \           \---local map tracking failed---LOST
+            //                \                           \---relocalization failed---LOST（doesn't reach here, because returns directly）
+            //                 \--last frame tracking failed(LOST)--LOST（doesn't reach here, because returns directly）
+
+            // Step 8 Determine if tracking is successful based on above operations
+            if (bOK){
+                // Only if still OK at this point, tracking is successful
                 mState = OK;
-            else if (mState == OK)
+                if (std::getenv("DEBUG_TrackT") != nullptr)
+                {
+                    std::cout << "\n[DEBUG][Track] Frame ID: " << mCurrentFrame.mnId << "  Tracking successful " << '\n';
+                }
+            }
+            else if (mState == OK) // From above diagram, this is only executed when first stage tracking is successful but second stage local map tracking fails
             {
+                // State changes to recently lost
                 if (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
                 {
                     Verbose::PrintMess("Track lost for less than one second...", Verbose::VERBOSITY_NORMAL);
@@ -2358,10 +2520,21 @@ namespace ORB_SLAM3
                     }
 
                     mState = RECENTLY_LOST;
+                    if (std::getenv("DEBUG_TrackT") != nullptr)
+                    {
+                        std::cout << "\n[DEBUG][Track] Frame ID: " << mCurrentFrame.mnId << "  Tracking failed, but first stage tracking is successful, so state changes to RECENTLY_LOST " << '\n';
+                    }
                 }
                 else
+                {
                     mState = RECENTLY_LOST; // visual to lost
+                    if (std::getenv("DEBUG_TrackT") != nullptr)
+                    {
+                        std::cout << "\n[DEBUG][Track] Frame ID: " << mCurrentFrame.mnId << "  Tracking failed, so state changes to RECENTLY_LOST " << '\n';
+                    }
+                }
 
+                //record time of loss
                 /*if(mCurrentFrame.mnId>mnLastRelocFrameId+mMaxFrames)
                 {*/
                 mTimeStampLost = mCurrentFrame.mTimeStamp;
@@ -2369,6 +2542,7 @@ namespace ORB_SLAM3
             }
 
             // Save frame if recent relocalization, since they are used for IMU reset (as we are making copy, it shluld be once mCurrFrame is completely modified)
+            // This section seems to have no effect
             if ((mCurrentFrame.mnId < (mnLastRelocFrameId + mnFramesToResetIMU)) && (mCurrentFrame.mnId > mnFramesToResetIMU) &&
                 (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD) && pCurrentMap->isImuInitialized())
             {
@@ -2407,6 +2581,24 @@ namespace ORB_SLAM3
             if (mCurrentFrame.isSet())
                 mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.GetPose());
 
+
+            // Looking at the two state changes up to this point
+            // bOK historical changes---last frame tracking successful---current frame tracking successful---local map tracking successful---true
+            //          \               \              \---local map tracking failed---false
+            //           \               \---current frame tracking failed---false
+            //            \---last frame tracking failed---relocalization successful---local map tracking successful---true
+            //                          \           \---local map tracking failed---false
+            //                           \---relocalization failed---false
+
+            // mState historical changes---last frame tracking successful---current frame tracking successful---local map tracking successful---OK
+            //            \               \              \---local map tracking failed---non-OK（in IMU mode RECENTLY_LOST）
+            //             \               \---current frame tracking failed---non-OK(when map has more than 10 keyframes RECENTLY_LOST)
+            //              \---last frame tracking failed(RECENTLY_LOST)---relocalization successful---local map tracking successful---OK
+            //               \                           \           \---local map tracking failed---LOST
+            //                \                           \---relocalization failed---LOST（doesn't reach here, because returns directly）
+            //                 \--last frame tracking failed(LOST)--LOST（doesn't reach here, because returns directly）
+
+            // Step 9 If tracking successful or recently lost, update velocity, clear invalid map points, create keyframes as needed
             if (bOK || mState == RECENTLY_LOST)
             {
                 // Update motion model
@@ -2538,13 +2730,12 @@ namespace ORB_SLAM3
     {
         std::cout << "\n[DEBUG][Track] BEGIN ---------\n";
         std::cout << " FrameID             : " << mCurrentFrame.mnId              << '\n';
-        std::cout << " Sensor state        : " << mState                           << '\n';
+        std::cout << " Tracking state     : " << mState                           << '\n';
         std::cout << " Matches / inliers   : " << mnMatchesInliers                 << '\n';
         std::cout << " Map points in map   : " << mpAtlas->MapPointsInMap()        << '\n';
         std::cout << " Local KFs (#)       : " << mvpLocalKeyFrames.size()         << '\n';
         std::cout << " Candidate KF needed : " << NeedNewKeyFrame()               << '\n';
         std::cout << " ---------------------------------------------------\n";
-        std::cout << "[DEBUG][Track] END\n";
     }
 }
 
