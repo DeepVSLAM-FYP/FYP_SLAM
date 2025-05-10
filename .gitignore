@@ -91,3 +91,4 @@ _trash/
 SuperPoint_SLAM/
 Vocabulary/*
 !Vocabulary/.gitignore
+.cursor

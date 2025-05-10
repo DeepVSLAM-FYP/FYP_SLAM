@@ -18,6 +18,9 @@ echo "Running from script directory: $SCRIPT_DIR"
 echo "Project root: $PROJECT_ROOT"
 echo "Dataset: $DATASET"
 
+# source debug.sh
+source "$SCRIPT_DIR/debug.sh"
+
 "$PROJECT_ROOT/Examples/ORB/mono_euroc_pipelined" \
     "$PROJECT_ROOT/Vocabulary/orb_mur.fbow" \
     "$PROJECT_ROOT/ORBSLAM3/Examples/Monocular/EuRoC.yaml" \

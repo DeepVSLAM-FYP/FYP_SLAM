@@ -175,6 +175,40 @@ int main(int argc, char **argv)
             double tframe = result.timestamp;
             
             std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
+
+            // Debug visualization of keypoints
+            if (std::getenv("DEBUG_KeypointVisualization"))
+            {
+                // Visualize keypoints on the image
+                cv::Mat imWithKeypoints;
+                result.image.copyTo(imWithKeypoints);
+                
+                // Scale down keypoint sizes for visualization
+                std::vector<cv::KeyPoint> scaledKeypoints;
+                scaledKeypoints.resize(result.keypoints.size());
+                int i = 0;
+                for (const auto& kp : result.keypoints) {
+                    // scaledKeypoints.push_back(kp); // Deep copy each keypoint
+                    scaledKeypoints[i] = kp;
+                    i++;
+                }
+                for(auto& kp : scaledKeypoints) {
+                    kp.size = 5; // Reduce the size of each keypoint by half
+                }
+                
+                cv::drawKeypoints(result.image, scaledKeypoints, imWithKeypoints, 
+                                cv::Scalar(0, 255, 0), 
+                                cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS); // Use simpler drawing style
+                
+                // Display the image with keypoints
+                cv::imshow("Keypoints", imWithKeypoints);
+                cv::waitKey(10); // Wait for 10ms to allow window to update
+
+                std::cout << "[DEBUG] KeypointVisualization  frame=" << ni 
+                          << "  keypoints=" << result.keypoints.size() 
+                          << std::endl;
+                // std::cout << "[DEBUG] KeypointVisualization END" << std::endl;
+            }
             
             // Track using the SLAM system
             SLAM.TrackMonocular(result);

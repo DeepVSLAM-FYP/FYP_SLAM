@@ -197,7 +197,7 @@
                 "${workspaceFolder}/datasets/MH01",
                 "${workspaceFolder}/ORBSLAM3/Examples/Monocular/EuRoC_TimeStamps/MH01.txt",
                 "${workspaceFolder}/Trajectories/ORB_Dummy/MH01/",
-                "${workspaceFolder}/datasets/feature_outputs/SP_H"
+                "/mnt/sda1/FYP_2024/Ruchith/FYP_SLAM/datasets/feature_outputs/SP_H"
             ],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",

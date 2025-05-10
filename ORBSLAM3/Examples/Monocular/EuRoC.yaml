@@ -45,7 +45,7 @@ Camera.RGB: 1
 #--------------------------------------------------------------------------------------------
 # Feature Extractor Parameters
 #--------------------------------------------------------------------------------------------
-# Feature extractor type (ORB, SIFT, SP_DPU)
+# Feature extractor type (ORB, SIFT, SP_DPU, DUMMY)
 # FeatureExtractor.type: "ORB"
 FeatureExtractor.type: "DUMMY"
 
