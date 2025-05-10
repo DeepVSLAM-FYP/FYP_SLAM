@@ -84,6 +84,6 @@ public:
                               const std::string& filePath);
 };
 
-} // namespace FeatExtraction
+} // namespace ORB_SLAM3
 
 #endif // FEATURE_IO_H

@@ -45,9 +45,9 @@ Camera.RGB: 1
 #--------------------------------------------------------------------------------------------
 # Feature Extractor Parameters
 #--------------------------------------------------------------------------------------------
-# Feature extractor type (ORB, SIFT)
+# Feature extractor type (ORB, SIFT, SP_DPU)
 # FeatureExtractor.type: "ORB"
-FeatureExtractor.type: "ORB"
+FeatureExtractor.type: "DUMMY"
 
 #--------------------------------------------------------------------------------------------
 # ORB Parameters
@@ -92,9 +92,14 @@ SIFTextractor.nLevels: 1
 #--------------------------------------------------------------------------------------------
 
 # Descriptor distance thresholds for feature matching
+#ORB
+# Matcher.TH_HIGH: 100.0
+# Matcher.TH_LOW: 50.0
+#SP_DPU
+Matcher.TH_HIGH: 0.70
+Matcher.TH_LOW: 0.3
+
 #SIFT
-Matcher.TH_HIGH: 100.0
-Matcher.TH_LOW: 50.0
 # Matcher.TH_HIGH: 200.0
 # Matcher.TH_LOW: 100.0
 

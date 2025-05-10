@@ -14,77 +14,40 @@
 namespace ORB_SLAM3
 {
 
+class ORBextractor;
+
 class ORBPipelinedProcess : public BasePipelinedProcess
 {
 public:
     /**
-     * Constructor
+     * Constructor for the ORB pipelined process
      * @param inputQueue The queue from which to read input items
      * @param outputQueue The queue to which processed results are written
-     * @param nFeatures Number of features to extract
-     * @param scaleFactor Scale factor for the pyramid
-     * @param nLevels Number of pyramid levels
-     * @param iniThFAST Initial FAST threshold
-     * @param minThFAST Minimum FAST threshold
      */
     ORBPipelinedProcess(
         ThreadSafeQueue<InputQueueItem>& inputQueue, 
-        ThreadSafeQueue<ResultQueueItem>& outputQueue,
-        int nFeatures = 1000,
-        float scaleFactor = 1.2f,
-        int nLevels = 8,
-        int iniThFAST = 20,
-        int minThFAST = 7)
-        : BasePipelinedProcess(inputQueue, outputQueue)
-    {
-        // Initialize ORB extractor
-        mpORBextractor = std::make_unique<ORBextractor>(nFeatures, scaleFactor, nLevels, iniThFAST, minThFAST);
-    }
+        ThreadSafeQueue<ResultQueueItem>& outputQueue);
+
+    /**
+     * Destructor
+     */
+    ~ORBPipelinedProcess() override;
 
 protected:
     /**
-     * Main processing loop
+     * Main processing function that runs in a separate thread
      */
-    void Run() override
-    {
-        InputQueueItem input;
-        
-        while (mbRunning)
-        {
-            // Attempt to get an item from the queue with a timeout
-            if (mInputQueue.try_dequeue_for(input, std::chrono::milliseconds(150)))
-            {
-                // Process the item and push the result to the output queue
-                ResultQueueItem result = ProcessItem(input);
-                mOutputQueue.enqueue(result);
-            }
-        }
-    }
+    void Run() override;
 
     /**
-     * Process a single input item using ORB extractor
+     * Process a single input item and return the result
      * @param input The input item to process
-     * @return The processed result with extracted features
+     * @return The processed result
      */
-    ResultQueueItem ProcessItem(const InputQueueItem& input) override
-    {
-        // Initialize the result with basic information from the input
-        ResultQueueItem result;
-        result.index = input.index;
-        result.timestamp = input.timestamp;
-        result.filename = input.filename;
-        result.image = input.image.clone();  // Clone the image for the result
-
-        // Extract features using ORB
-        // result.lappingArea.clear();  // This is usually empty for monocular
-        result.lappingArea = {0,1000};
-        (*mpORBextractor)(input.image, cv::Mat(), result.keypoints, result.descriptors, result.lappingArea);
-
-        return result;
-    }
+    ResultQueueItem ProcessItem(const InputQueueItem& input) override;
 
 private:
-    // ORB extractor instance
+    // The ORB extractor instance
     std::unique_ptr<ORBextractor> mpORBextractor;
 };
 

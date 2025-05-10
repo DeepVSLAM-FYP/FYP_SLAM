@@ -104,13 +104,26 @@ target_link_libraries(Match_Visualizer
 add_library(Feature_Extractors SHARED
     src/FeatureExtractors/ORBextractor.cc
     src/FeatureExtractors/SIFTextractor.cc
-    # src/FeatureExtractors/Dummy/Dummyextractor.cc
+    src/FeatureExtractors/Dummy/FeatureIO.cpp
+    src/FeatureExtractors/Dummy/Dummyextractor.cc
     # src/FeatureExtractors/Dummy/DummyAdapter.cpp
 )
 
 target_link_libraries( Feature_Extractors
     ${OpenCV_LIBS}
     ${EIGEN3_LIBS}
+)
+
+# Pipelined Feature Extraction
+add_library(Pipelined_Feature_Extraction SHARED
+    src/PipelinedFE/DummyPipelinedProcess.cc
+    src/PipelinedFE/ORBPipelinedProcess.cc
+)
+
+target_link_libraries(Pipelined_Feature_Extraction
+    ${OpenCV_LIBS}
+    ${EIGEN3_LIBS}
+    Feature_Extractors
 )
 
 # Combine all source files into a single library
@@ -163,7 +176,12 @@ add_library(${PROJECT_NAME} SHARED
     src/ImuTypes.cc
 )
 
-target_link_libraries(${PROJECT_NAME} ${COMMON_LIBRARIES} Feature_Extractors Match_Visualizer)
+target_link_libraries(${PROJECT_NAME} 
+    ${COMMON_LIBRARIES} 
+    Feature_Extractors 
+    Match_Visualizer
+    Pipelined_Feature_Extraction
+)
 
 # Build examples - these link to the main library which includes all modules
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_ROOT_DIR}/Examples/ORB)
@@ -178,6 +196,10 @@ target_link_libraries(monoORB_euroc ${PROJECT_NAME})
 add_executable(mono_euroc_pipelined
         Examples/Monocular/mono_euroc_pipelined.cc)
 target_link_libraries(mono_euroc_pipelined ${PROJECT_NAME})
+
+add_executable(mono_euroc_pipelined_dummy
+        Examples/Monocular/mono_euroc_pipelined_dummy.cc)
+target_link_libraries(mono_euroc_pipelined_dummy ${PROJECT_NAME})
 
 #TODO: make these examples work
 # add_executable(monoORB_tum
@@ -205,3 +227,5 @@ target_link_libraries(mono_euroc_pipelined ${PROJECT_NAME})
 #         Examples/Monocular-Inertial/mono_inertial_tum_vi.cc)
 # target_link_libraries(monoORB_inertial_tum_vi ${PROJECT_NAME})
 message(STATUS "Libraries will be built in: ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
+message(STATUS "Executables will be built in: ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
+# message(STATUS "Dummy Pipelined features will be loaded from: datasets/feature_outputs/SP_H")

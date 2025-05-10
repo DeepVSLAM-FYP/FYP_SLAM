@@ -13,8 +13,6 @@
 #include <opencv2/features2d.hpp>
 #include "FeatureExtractors/Dummy/FeatureIO.h"  // Added include for FeatureIO
 
-namespace fs = std::filesystem;
-
 namespace ORB_SLAM3
 {
 
@@ -138,8 +136,12 @@ int DummyExtractor::operator()(cv::InputArray _image, cv::InputArray _mask,
 
 std::string DummyExtractor::getBaseFilename(const std::string& filepath) 
 {
-    fs::path path(filepath);
-    return path.stem().string();
+    // Simple string-based implementation to extract the filename without extension
+    size_t lastSlash = filepath.find_last_of("/\\");
+    std::string filename = (lastSlash == std::string::npos) ? filepath : filepath.substr(lastSlash + 1);
+    
+    size_t lastDot = filename.find_last_of(".");
+    return (lastDot == std::string::npos) ? filename : filename.substr(0, lastDot);
 }
 
 bool DummyExtractor::loadKeypoints(const std::string& imageBaseName, std::vector<cv::KeyPoint>& keypoints) 
@@ -152,7 +154,7 @@ bool DummyExtractor::loadKeypoints(const std::string& imageBaseName, std::vector
     std::string kptsFilePath = kpDir + imageBaseName + ".kpts";
     
     // Use FeatureIO to load keypoints
-    bool success = FeatExtraction::FeatureIO::loadKeypoints(keypoints, kptsFilePath);
+    bool success = FeatureIO::loadKeypoints(keypoints, kptsFilePath);
     
     if (!success) {
         std::cerr << "Cannot load keypoints file: " << kptsFilePath << std::endl;
@@ -171,7 +173,7 @@ bool DummyExtractor::loadDescriptors(const std::string& imageBaseName, cv::Mat& 
     std::string descFilePath = descDir + imageBaseName + ".desc";
     
     // Use FeatureIO to load descriptors
-    bool success = FeatExtraction::FeatureIO::loadDescriptors(descriptors, descFilePath);
+    bool success = FeatureIO::loadDescriptors(descriptors, descFilePath);
     
     if (!success) {
         std::cerr << "Cannot load descriptors file: " << descFilePath << std::endl;

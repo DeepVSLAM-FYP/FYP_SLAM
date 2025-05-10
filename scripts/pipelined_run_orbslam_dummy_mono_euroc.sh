@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# Run ORB-SLAM3 in Monocular pipelined mode with Dummy feature extractor and EuRoC dataset
+# Based on the mono_euroc_pipelined_dummy implementation
+
+# Get the directory where the script is located
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+# Set dataset variable - replace MH01,V101 with desired sequence if needed
+DATASET=${1:-"MH01"}  # Use first argument or default to MH01
+
+# Set feature directory - where to load features from
+FEATURE_DIR=${2:-"$PROJECT_ROOT/datasets/feature_outputs/SP_H"}  # Default to SP_H directory
+
+# Print paths for debugging
+echo "Running from script directory: $SCRIPT_DIR"
+echo "Project root: $PROJECT_ROOT"
+echo "Dataset: $DATASET"
+echo "Feature directory: $FEATURE_DIR"
+
+# Enable debug mode
+export DEBUG_SLAM=1
+
+# Execute the pipelined dummy ORB-SLAM3 with EuRoC dataset
+"$PROJECT_ROOT/Examples/ORB/mono_euroc_pipelined_dummy" \
+    "$PROJECT_ROOT/Vocabulary/temp_dpu_mh01_sp_h.fbow" \
+    "$PROJECT_ROOT/ORBSLAM3/Examples/Monocular/EuRoC.yaml" \
+    "$PROJECT_ROOT/datasets/${DATASET}" \
+    "$PROJECT_ROOT/ORBSLAM3/Examples/Monocular/EuRoC_TimeStamps/${DATASET}.txt" \
+    "$PROJECT_ROOT/Trajectories/ORB_Dummy/${DATASET}/" \
+    "$FEATURE_DIR" 2>&1 | tee "$PROJECT_ROOT/debug_output/orbslam_pipelined_dummy_debug_log_${DATASET}_$(date +%Y%m%d_%H%M%S).txt"
+
+echo "ORB-SLAM3 Monocular Pipelined Dummy Extractor run with ${DATASET} completed" 

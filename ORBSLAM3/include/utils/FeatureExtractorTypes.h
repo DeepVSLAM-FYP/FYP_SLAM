@@ -11,6 +11,7 @@ namespace ORB_SLAM3 {
 enum class FeatureExtractorType {
     ORB,
     SUPERPOINT,
+    DUMMY,
     CUSTOM
     // Add more extractor types as needed
 };

@@ -452,7 +452,7 @@ namespace ORB_SLAM3
         return nmatches;
     }
 
-    int ORBmatcher::SearchByProjection(KeyFrame* pKF, Sophus::Sim3f &Scw, const vector<MapPoint*> &vpPoints,
+    int ORBmatcher::SearchByProjection(KeyFrame* pKF, Sophus::Sim3f &Scw, const vector<MapPoint *> &vpPoints,
                                        vector<MapPoint*> &vpMatched, int th, float ratioHamming)
     {
         // Get Calibration Parameters for later projection
@@ -2248,7 +2248,11 @@ namespace ORB_SLAM3
             }else if(GlobalFeatureExtractorInfo::GetFeatureExtractorType() == "Xfeat"){
                 dist = 512*(cv::norm(a, b, cv::NORM_L2SQR));
             }else{
-                throw std::runtime_error("Unknown feature extractor type");
+                // For any other floating-point descriptor (e.g., SuperPoint, Dummy, etc.)
+                // fall back to standard L2-squared distance. This prevents runtime errors
+                // when using custom extractors that produce CV_32F descriptors but have
+                // not been explicitly handled here.
+                dist = cv::norm(a, b, cv::NORM_L2SQR);
             }
         }
 

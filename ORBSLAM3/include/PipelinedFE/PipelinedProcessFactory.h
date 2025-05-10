@@ -10,6 +10,7 @@
 #include "BasePipelinedProcess.h"
 #include "ORBPipelinedProcess.h"
 #include "../utils/FeatureExtractorTypes.h"
+#include "DummyPipelinedProcess.h"
 #include <memory>
 
 namespace ORB_SLAM3
@@ -35,9 +36,24 @@ public:
             case FeatureExtractorType::ORB:
                 return std::make_unique<ORBPipelinedProcess>(inputQueue, outputQueue);
             
-            // Add other feature extractors as needed
-            // case FeatureExtractorType::SUPERPOINT:
-            //     return std::make_unique<SuperPointPipelinedProcess>(inputQueue, outputQueue);
+            case FeatureExtractorType::SUPERPOINT:
+                // Create a dummy process that loads SuperPoint features
+                return std::make_unique<DummyPipelinedProcess>(
+                    inputQueue, 
+                    outputQueue,
+                    "/mnt/sda1/FYP_2024/Ruchith/FYP_SLAM/datasets/feature_outputs/SP_H",
+                    "SP",
+                    CV_32F,
+                    256  // SuperPoint descriptor size
+                );
+            
+            case FeatureExtractorType::DUMMY:
+                // For general dummy process with default settings
+                return std::make_unique<DummyPipelinedProcess>(
+                    inputQueue, 
+                    outputQueue,
+                    "/mnt/sda1/FYP_2024/Ruchith/FYP_SLAM/datasets/feature_outputs/SP_H"
+                );
             
             default:
                 // Default to ORB

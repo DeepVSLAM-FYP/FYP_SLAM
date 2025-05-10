@@ -185,6 +185,43 @@
                     "ignoreFailures": true
                 }
             ]
+        },
+        {
+            "name": "Mono_EuroC_Pipelined_Dummy",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/Examples/ORB/mono_euroc_pipelined_dummy",
+            "args": [
+                "${workspaceFolder}/Vocabulary/orb_mur.fbow",
+                "${workspaceFolder}/ORBSLAM3/Examples/Monocular/EuRoC.yaml",
+                "${workspaceFolder}/datasets/MH01",
+                "${workspaceFolder}/ORBSLAM3/Examples/Monocular/EuRoC_TimeStamps/MH01.txt",
+                "${workspaceFolder}/Trajectories/ORB_Dummy/MH01/",
+                "${workspaceFolder}/datasets/feature_outputs/SP_H"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${fileDirname}",
+            "environment": [
+                {
+                    "name": "DEBUG_SLAM",
+                    "value": "1"
+                }
+            ],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "preLaunchTask": "Build ORB SLAM",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ]
         }
 
     ]

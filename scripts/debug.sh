@@ -30,13 +30,13 @@ unset USE_ORB
 # export DEBUG_SLAM=1
 
 # ORBMatcher.cc
-# export DEBUG_SearchByProjection=1
-# export DEBUG_SearchByBoW=1
+export DEBUG_SearchByProjection=1
+export DEBUG_SearchByBoW=1
 export DEBUG_SearchForInitialization=1
 # export DEBUG_SearchForInitializationDist=1
 # export DEBUG_Fuse=1
-# export DEBUG_SearchByProjectionKF=1
-# export DEBUG_SearchByProjectionFrame=1
+export DEBUG_SearchByProjectionKF=1
+export DEBUG_SearchByProjectionFrame=1
 # export DEBUG_SearchBySim3=1
 # export DEBUG_DescriptorDistance=1
 # export DEBUG_ComputeThreeMaxima=1
