@@ -92,3 +92,4 @@ SuperPoint_SLAM/
 Vocabulary/*
 !Vocabulary/.gitignore
 .cursor
+_results/

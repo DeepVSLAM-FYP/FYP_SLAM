@@ -17,6 +17,7 @@
 */
 
 #include "MatchVisualizer.h"
+#include "Frame.h"
 
 #include <opencv2/imgproc/imgproc.hpp>
 #include <iostream>
@@ -143,10 +144,10 @@ void MatchVisualizer::ShowMatches(
         img2_color, kp2,
         matchesToDraw,
         img_matches,
-        cv::Scalar(0, 255, 0),   // Match color (green)
+        cv::Scalar_<int>::all(-1) ,   // Match color (random)
         cv::Scalar(0, 0, 255),   // Single point color (red) for keypoints without match
         std::vector<char>(),     // Mask (empty for all matches)
-        cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS | cv::DrawMatchesFlags::DEFAULT
+        cv::DrawMatchesFlags::DEFAULT
     );
     
     // Display match statistics
@@ -222,10 +223,10 @@ void MatchVisualizer::SaveMatchImage(
         img2_color, kp2,
         matchesToDraw,
         img_matches,
-        cv::Scalar(0, 255, 0),   // Match color (green)
+        cv::Scalar_<int>::all(-1) ,   // Match color (random)
         cv::Scalar(0, 0, 255),   // Single point color (red)
         std::vector<char>(),     // Mask (empty)
-        cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS | cv::DrawMatchesFlags::DEFAULT
+        cv::DrawMatchesFlags::DEFAULT
     );
     
     // Add match statistics
@@ -244,6 +245,128 @@ void MatchVisualizer::SaveMatchImage(
     } catch (const cv::Exception& e) {
         std::cerr << "Error saving match visualization: " << e.what() << std::endl;
     }
+}
+
+
+
+void MatchVisualizer::ShowMatchedKeypoints(
+    const cv::Mat& img,
+    const std::vector<cv::KeyPoint>& keypoints,
+    const std::vector<int>& matchedIndices,
+    const std::string& windowName,
+    bool drawOnly,
+    const cv::Scalar& matchColor,
+    const cv::Scalar& unmatchedColor)
+{
+    // Create a working copy of the input image
+    cv::Mat imgDisplay;
+    
+    // Ensure the image is in color for drawing colored keypoints
+    if (img.channels() == 1) {
+        cv::cvtColor(img, imgDisplay, cv::COLOR_GRAY2BGR);
+    } else {
+        imgDisplay = img.clone();
+    }
+    
+    // Create a mask for marking matched keypoints
+    std::vector<bool> isMatched(keypoints.size(), false);
+    for (int idx : matchedIndices) {
+        if (idx >= 0 && idx < static_cast<int>(keypoints.size())) {
+            isMatched[idx] = true;
+        }
+    }
+    
+    // Draw all keypoints
+    for (size_t i = 0; i < keypoints.size(); i++) {
+        // Choose color based on whether the keypoint is matched
+        const cv::Scalar& color = isMatched[i] ? matchColor : unmatchedColor;
+        
+        // Draw the keypoint
+        cv::circle(imgDisplay, 
+                  keypoints[i].pt, 
+                  4, // have a constant radius
+                  color, 
+                  2); // thickness
+        
+        // Draw orientation line if available
+        // if (keypoints[i].angle >= 0) {
+        //     float angleRad = keypoints[i].angle * (M_PI / 180.0f);
+        //     cv::Point2f direction(cos(angleRad), sin(angleRad));
+        //     cv::Point2f end = keypoints[i].pt + (direction * keypoints[i].size);
+        //     cv::line(imgDisplay, keypoints[i].pt, end, color, 2);
+        // }
+    }
+    
+    // Add statistics
+    int matchCount = matchedIndices.size();
+    int totalKeypoints = keypoints.size();
+    std::string stats = "Keypoints: " + std::to_string(totalKeypoints) + 
+                        " | Matched: " + std::to_string(matchCount);
+    
+    cv::putText(imgDisplay, stats, cv::Point(10, 30), 
+                cv::FONT_HERSHEY_SIMPLEX, 0.75, cv::Scalar(0, 0, 255), 2);
+    
+    // Display the image
+    cv::namedWindow(windowName, cv::WINDOW_NORMAL);
+    cv::imshow(windowName, imgDisplay);
+    
+    // Wait for keyboard input if not in "draw only" mode
+    if (!drawOnly) {
+        cv::waitKey(0);
+    }
+}
+
+void MatchVisualizer::ShowFrameMatches(
+    const Frame& lastFrame, 
+    const Frame& currentFrame,
+    const std::string& windowName,
+    int waitTime)
+{
+    std::vector<cv::DMatch> matches;
+    std::vector<cv::KeyPoint> keypoints1, keypoints2;
+    
+    // Convert MapPoints to keypoints and create matches
+    for(size_t i = 0; i < currentFrame.mvpMapPoints.size(); i++)
+    {
+        if(currentFrame.mvpMapPoints[i])
+        {
+            // Use the actual index in the keypoints arrays
+            cv::DMatch match;
+            match.queryIdx = keypoints1.size(); // Current index in keypoints1
+            match.trainIdx = keypoints2.size(); // Current index in keypoints2
+            matches.push_back(match);
+            
+            // Check if the index is within bounds of the keypoint arrays
+            if(i < lastFrame.mvKeysUn.size() && i < currentFrame.mvKeysUn.size()) {
+                keypoints1.push_back(lastFrame.mvKeysUn[i]);
+                keypoints2.push_back(currentFrame.mvKeysUn[i]);
+            }
+            else {
+                // Remove the match we just added since we can't add the keypoints
+                matches.pop_back();
+            }
+        }
+    }
+    
+    // If no matches were found, display a message and return
+    if(matches.empty()) {
+        std::cout << "No matches to display between frames" << std::endl;
+        return;
+    }
+    
+    // Draw the matches
+    cv::Mat outImg;
+    cv::drawMatches(lastFrame.image, keypoints1, currentFrame.image, keypoints2, matches, outImg);
+    
+    // Add statistics
+    std::string stats = "Matched MapPoints: " + std::to_string(matches.size());
+    cv::putText(outImg, stats, cv::Point(10, 30), 
+                cv::FONT_HERSHEY_SIMPLEX, 0.75, cv::Scalar(0, 0, 255), 2);
+    
+    // Display the image
+    cv::namedWindow(windowName, cv::WINDOW_NORMAL);
+    cv::imshow(windowName, outImg);
+    cv::waitKey(waitTime);
 }
 
 } // namespace ORB_SLAM3

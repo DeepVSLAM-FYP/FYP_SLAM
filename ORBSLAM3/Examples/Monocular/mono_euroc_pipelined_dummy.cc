@@ -205,6 +205,41 @@ int main(int argc, char **argv)
                 result.keypoints = newKeypoints;
             }
 
+            // Filter out keypoints that are outside the image boundaries
+            const int imgWidth = result.image.cols;
+            const int imgHeight = result.image.rows;
+            
+            std::vector<cv::KeyPoint> validKeypoints;
+            cv::Mat validDescriptors;
+            
+            int removedCount = 0;
+            if (!result.keypoints.empty() && !result.descriptors.empty()) {
+                validDescriptors.create(0, result.descriptors.cols, result.descriptors.type());
+                
+                for (size_t i = 0; i < result.keypoints.size(); i++) {
+                    const auto& kp = result.keypoints[i];
+                    
+                    // Check if keypoint is within image boundaries
+                    if (kp.pt.x >= 0 && kp.pt.x < imgWidth && 
+                        kp.pt.y >= 0 && kp.pt.y < imgHeight) {
+                        validKeypoints.push_back(kp);
+                        validDescriptors.push_back(result.descriptors.row(i));
+                    } else {
+                        removedCount++;
+                    }
+                }
+                
+                // Update result with filtered keypoints and descriptors
+                result.keypoints = validKeypoints;
+                result.descriptors = validDescriptors;
+                
+                if (removedCount > 0 && std::getenv("DEBUG_FEAT") != nullptr) {
+                    std::cout << "[DEBUG_FEAT] Removed " << removedCount 
+                            << " keypoints outside image boundaries after resizing. Remaining: " 
+                            << validKeypoints.size() << std::endl;
+                }
+            }
+
             // Debug visualization of keypoints
             if (std::getenv("DEBUG_KeypointVisualization"))
             {

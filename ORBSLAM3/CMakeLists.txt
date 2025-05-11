@@ -9,11 +9,20 @@ MESSAGE("Build type: " ${CMAKE_BUILD_TYPE})
 
 # set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -Wall   -O3")
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall   -O3")
+# set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wunused-result")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wconversion-null -Wdeprecated -Wunused-result")
+
+# set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -g -Wall -Wextra -DDEBUG_MODE -DVERBOSE_DEBUG")
+# set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -Wall -Wextra -DDEBUG_MODE -DVERBOSE_DEBUG")
+
+# set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3 -march=native")
+# set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -march=native")
+
+
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -O3 -Wunused-result")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wconversion-null -Wdeprecated -Wunused-result")
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -march=native")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=native")
-
 set(PROJECT_ROOT_DIR "${PROJECT_SOURCE_DIR}/..")
 
 # # Check C++11 or C++0x support
@@ -74,6 +83,7 @@ include_directories(
         ${PROJECT_SOURCE_DIR}/include/CameraModels
         ${PROJECT_SOURCE_DIR}/include/FeatureExtractors
         ${PROJECT_ROOT_DIR}/Thirdparty/Sophus
+        ${PROJECT_ROOT_DIR}/Thirdparty/FBOW/include
         ${EIGEN3_INCLUDE_DIR}
         ${Pangolin_INCLUDE_DIRS}
 )

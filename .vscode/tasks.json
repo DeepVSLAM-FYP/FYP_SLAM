@@ -51,6 +51,22 @@
 			"detail": "Builds only the ORB SLAM monocular executable"
 		},
 		{
+			"label": "Run Debug Script",
+			"type": "shell",
+			"command": "source ${workspaceFolder}/scripts/debug.sh",
+			"problemMatcher": [],
+			"detail": "Runs the debug script to enable debug prints via environment variables"
+		},
+		{
+			"label": "Build ORB SLAM && Run Debug Script",
+			"type": "shell",
+			"command": "echo \"Building ORB SLAM and setting up debug environment...\"",
+			"dependsOrder": "sequence", 
+			"dependsOn": ["Build ORB SLAM", "Run Debug Script"],
+			"problemMatcher": [],
+			"detail": "Builds ORB SLAM and sets up the debug environment"
+		},
+		{
 			"label": "Build XFeat SLAM",
 			"type": "shell",
 			"command": "cd ${workspaceFolder}/XFeatSLAM/build && make -j$(nproc)",

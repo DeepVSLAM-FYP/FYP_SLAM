@@ -97,7 +97,7 @@ SIFTextractor.nLevels: 1
 # Matcher.TH_LOW: 50.0
 #SP_DPU
 Matcher.TH_HIGH: 70.0
-Matcher.TH_LOW: 30.0
+Matcher.TH_LOW: 50.0
 
 #SIFT
 # Matcher.TH_HIGH: 200.0

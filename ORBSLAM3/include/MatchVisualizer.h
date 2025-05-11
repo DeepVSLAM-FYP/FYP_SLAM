@@ -29,6 +29,9 @@
 namespace ORB_SLAM3
 {
 
+// Forward declarations
+class Frame;
+
 class MatchVisualizer
 {
 public:
@@ -110,6 +113,38 @@ public:
         int gridX = 8,
         int gridY = 6,
         int maxPerCell = 5);
+        
+    /**
+     * Display matched keypoints on a single image
+     * @param img Input image
+     * @param keypoints All keypoints in the image
+     * @param matchedIndices Indices of keypoints that have matches
+     * @param windowName Name of the display window
+     * @param drawOnly Draw without waiting for keypress (for automated processing)
+     * @param matchColor Color to draw matched keypoints (BGR format)
+     * @param unmatchedColor Color to draw unmatched keypoints (BGR format)
+     */
+    static void ShowMatchedKeypoints(
+        const cv::Mat& img,
+        const std::vector<cv::KeyPoint>& keypoints,
+        const std::vector<int>& matchedIndices,
+        const std::string& windowName = "Matched Features",
+        bool drawOnly = false,
+        const cv::Scalar& matchColor = cv::Scalar(0, 255, 0),
+        const cv::Scalar& unmatchedColor = cv::Scalar(0, 0, 255));
+        
+    /**
+     * Display matches between two frames
+     * @param lastFrame Previous frame
+     * @param currentFrame Current frame
+     * @param windowName Name of the display window
+     * @param waitTime Time to wait for keypress (0 = wait indefinitely, 1 = don't wait)
+     */
+    static void ShowFrameMatches(
+        const Frame& lastFrame, 
+        const Frame& currentFrame,
+        const std::string& windowName = "Frame Matches",
+        int waitTime = 1);
 
 private:
     /**

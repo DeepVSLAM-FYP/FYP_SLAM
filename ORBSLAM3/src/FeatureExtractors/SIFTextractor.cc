@@ -7,8 +7,8 @@ namespace ORB_SLAM3 {
 SIFTextractor::SIFTextractor(int nfeatures) {
     // Build a standard SIFT detector / descriptor
     sift_ = cv::SIFT::create(nfeatures);
-    // We only ever need one image level, so leave sf_, isf_, etc. as {1.0}
-    // pyr_ will be built on demand in operator()
+    // We only ever need one image level, so leave mvScaleFactor, mvInvScaleFactor, etc. as {1.0}
+    // mvImagePyramid will be built on demand in operator()
 }
 
 int SIFTextractor::operator()(const cv::Mat& image, cv::InputArray mask,
@@ -43,8 +43,8 @@ int SIFTextractor::operator()(const cv::Mat& image, cv::InputArray mask,
     vLap.clear();
 
     // 4) Build a single‐level pyramid
-    pyr_.resize(1);
-    pyr_[0] = image;
+    mvImagePyramid.resize(1);
+    mvImagePyramid[0] = image;
 
     if(std::getenv("DEBUG_FEAT") != nullptr) 
     {

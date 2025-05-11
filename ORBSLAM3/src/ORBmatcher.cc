@@ -221,6 +221,31 @@ namespace ORB_SLAM3
 
         if (std::getenv("DEBUG_SearchByProjection"))
         {
+
+            // Convert MapPoints to keypoints and create matches
+            std::vector<cv::KeyPoint> keypoints;
+            std::vector<int> matchedIndices;
+            
+            // Get all keypoints from frame
+            keypoints = F.mvKeysUn;
+            
+            // Mark which keypoints have matches
+            for(size_t i = 0; i < F.mvpMapPoints.size(); i++) {
+                if(F.mvpMapPoints[i]) {
+                    matchedIndices.push_back(i);
+                }
+            }
+            
+            // Draw matches using MatchVisualizer
+            MatchVisualizer::ShowMatchedKeypoints(
+                F.image,
+                keypoints,
+                matchedIndices,
+                "SearchByProjectionTrackLM",
+                true,  // drawOnly = true to not wait for keypress
+                cv::Scalar(0, 255, 0),  // Green for matched points
+                cv::Scalar(0, 0, 255)   // Red for unmatched points
+            );
             std::cout << "[DEBUG] SearchByProjection  "
                       << "nmatches=" << nmatches
                       << "  left=" << left
@@ -2035,6 +2060,13 @@ namespace ORB_SLAM3
 
         if (std::getenv("DEBUG_SearchByProjectionFrame"))
         {
+            MatchVisualizer::ShowFrameMatches(
+                LastFrame,
+                CurrentFrame,
+                "SearchByProjectionFrame",
+                1
+            );
+            
             std::cout << "[DEBUG] SearchByProjectionFrame  "
                       << "CurrentF id=" << CurrentFrame.mnId
                       << "  LastF id=" << LastFrame.mnId

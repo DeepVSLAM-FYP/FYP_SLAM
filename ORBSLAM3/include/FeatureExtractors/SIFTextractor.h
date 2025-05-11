@@ -22,12 +22,11 @@ public:
     // Fake a one‐level pyramid everywhere:
     int  GetLevels()                     const override { return 1;            }
     float GetScaleFactor()               const override { return 1.0f;         }
-    const std::vector<float>& GetScaleFactors()       const override { return sf_;    }
-    const std::vector<float>& GetInverseScaleFactors()const override { return isf_;   }
-    const std::vector<float>& GetScaleSigmaSquares()  const override { return ss2_;   }
-    const std::vector<float>& 
-          GetInverseScaleSigmaSquares() const override { return iss2_;  }
-    const std::vector<cv::Mat>& GetImagePyramid()     const override { return pyr_;  }
+    const std::vector<float>& GetScaleFactors()       const override { return mvScaleFactor;    }
+    const std::vector<float>& GetInverseScaleFactors()const override { return mvInvScaleFactor;   }
+    const std::vector<float>& GetScaleSigmaSquares()  const override { return mvLevelSigma2;   }
+    const std::vector<float>& GetInverseScaleSigmaSquares() const override { return mvInvLevelSigma2;  }
+    const std::vector<cv::Mat>& GetImagePyramid()     const override { return mvImagePyramid;  }
 
     // descriptor traits
     int  descriptorType()   const override { return CV_32F;         }
@@ -37,14 +36,16 @@ public:
 private:
     cv::Ptr<cv::SIFT> sift_;
 
+    float scale = std::sqrt(8.0f);
+
     // all of these vectors will be length=1
-    std::vector<float> sf_{1.0f};
-    std::vector<float> isf_{1.0f};
-    std::vector<float> ss2_{4.8f};
-    std::vector<float> iss2_{1/4.8f};
+    std::vector<float> mvScaleFactor{scale};
+    std::vector<float> mvInvScaleFactor{1.0f/scale};
+    std::vector<float> mvLevelSigma2{scale*scale};
+    std::vector<float> mvInvLevelSigma2{1/(scale*scale)};
 
     // single‐element pyramid
-    mutable std::vector<cv::Mat> pyr_{};
+    mutable std::vector<cv::Mat> mvImagePyramid{};
 };
 
 }  // namespace ORB_SLAM3
