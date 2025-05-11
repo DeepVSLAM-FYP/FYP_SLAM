@@ -24,6 +24,7 @@
 #include<opencv2/core/core.hpp>
 #include<opencv2/features2d/features2d.hpp>
 #include"sophus/sim3.hpp"
+#include "MatchVisualizer.h"
 
 
 #include"MapPoint.h"

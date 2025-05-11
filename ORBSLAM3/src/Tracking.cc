@@ -2960,7 +2960,7 @@ void Tracking::MonocularInitialization()
                     currImg,
                     mCurrentFrame.mvKeysUn,
                     mvIniMatches,
-                        "/mnt/sda1/FYP_2024/Ruchith/FYP_SLAM/_results/InitMatches.jpg"
+                        "/mnt/sda1/FYP_2024/Ruchith/FYP_SLAM/_results/InitMatches_" + std::to_string(mCurrentFrame.mnId) + ".jpg"
                     );
             }
             else
@@ -3020,7 +3020,7 @@ void Tracking::MonocularInitialization()
         {
             std::cout << "[DEBUG][MonoInit] 2-view reconstruction "
                     << (success ? "SUCCESS" : "FAILED")
-                    << "Frame Ids: " << mInitialFrame.mnId << ", " << mCurrentFrame.mnId
+                    << " | Frame Ids: " << mInitialFrame.mnId << ", " << mCurrentFrame.mnId
                     << "  triangulated=" << std::count(vbTriangulated.begin(),
                                                         vbTriangulated.end(), true)
                     << "  Tcw.z=" << Tcw.translation().z() << std::endl;
@@ -4162,6 +4162,7 @@ bool Tracking::TrackWithMotionModel()
             if (mState == LOST || mState == RECENTLY_LOST) // Lost for less than 1 second
                 th = 15;                                   // 15
 
+            th = th + ((GlobalFeatureExtractorInfo::GetFeatureExtractorType() == "DUMMY") ? 5 : 0);
             int matches = matcher.SearchByProjection(mCurrentFrame, mvpLocalMapPoints, th, mpLocalMapper->mbFarPoints, mpLocalMapper->mThFarPoints);
 
             if(std::getenv("DEBUG_TrackLM") != nullptr)
