@@ -704,7 +704,11 @@ namespace ORB_SLAM3
         // For collecting stats on descriptor distances
         const int NUM_DIST_BINS = 20;
         vector<int> distanceBins(NUM_DIST_BINS, 0);
-        const float binSize = 1.0 / float(NUM_DIST_BINS - 1); // Last bin for distances > TH_HIGH
+        const float binSize = 100.0 / float(NUM_DIST_BINS - 1); // Last bin for distances > TH_HIGH
+        
+        // Counters for discarded matches
+        int discardedRatio = 0;
+        int discardedThreshold = 0;
 
         for (size_t i1 = 0, iend1 = F1.mvKeysUn.size(); i1 < iend1; i1++)
         {
@@ -747,6 +751,13 @@ namespace ORB_SLAM3
                 }
             }
 
+            // Add to histogram regardless of whether it's a match
+            if (bestDist != std::numeric_limits<float>::max())
+            {
+                int bin = std::min(int(bestDist / binSize), NUM_DIST_BINS - 1);
+                distanceBins[bin]++;
+            }
+
             if (bestDist <= TH_LOW)
             {
                 if (bestDist < (float)bestDist2 * mfNNratio)
@@ -761,15 +772,6 @@ namespace ORB_SLAM3
                     vMatchedDistance[bestIdx2] = bestDist;
                     nmatches++;
 
-                    // Categorize distances into bins for statistics
-                    if (std::getenv("DEBUG_SearchForInitialization"))
-                    {
-                        int bin = std::min(int(bestDist / binSize), NUM_DIST_BINS - 1);
-                        if (bestDist > 1.0)
-                            std::cout << " Distance more than 1.0: " << bestDist << std::endl;
-                        distanceBins[bin]++;
-                    }
-
                     if (mbCheckOrientation)
                     {
                         float rot = F1.mvKeysUn[i1].angle - F2.mvKeysUn[bestIdx2].angle;
@@ -782,6 +784,14 @@ namespace ORB_SLAM3
                         rotHist[bin].push_back(i1);
                     }
                 }
+                else
+                {
+                    discardedRatio++;
+                }
+            }
+            else
+            {
+                discardedThreshold++;
             }
 
             if (std::getenv("DEBUG_SearchForInitializationDist"))
@@ -790,7 +800,7 @@ namespace ORB_SLAM3
                           << " |  i2=" << bestIdx2
                           << " | i12 bestDist=" << bestDist
                           << " | bestDist2=" << bestDist2
-                          << " | vMatchedDistance=" << vMatchedDistance[bestIdx2] // best distance for i2 with a match from f1
+                          << " | vMatchedDistance=" << vMatchedDistance[bestIdx2]
                           << std::endl;
             }
         }
@@ -838,6 +848,8 @@ namespace ORB_SLAM3
             std::cout << "Unmatched points F1: " << vnMatches12.size() - nmatches << " | "
                       << "Unmatched points F2: " << vMatchedDistance.size() - nmatches << std::endl;
             std::cout << "Total matches: " << nmatches << std::endl;
+            std::cout << "Discarded due to ratio test: " << discardedRatio << std::endl;
+            std::cout << "Discarded due to threshold: " << discardedThreshold << std::endl;
 
             std::cout << "--------------------------------------------------------------------------" << std::endl;
             std::cout << "[DEBUG] SearchForInitialization  nmatches=" << nmatches
@@ -2254,7 +2266,7 @@ namespace ORB_SLAM3
                 // fall back to standard L2-squared distance. This prevents runtime errors
                 // when using custom extractors that produce CV_32F descriptors but have
                 // not been explicitly handled here.
-                dist = cv::norm(a, b, cv::NORM_L2SQR);
+                dist = cv::norm(a, b, cv::NORM_L2) * 100;
             }
         }
 

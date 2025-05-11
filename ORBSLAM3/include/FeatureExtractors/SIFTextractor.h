@@ -40,8 +40,8 @@ private:
     // all of these vectors will be length=1
     std::vector<float> sf_{1.0f};
     std::vector<float> isf_{1.0f};
-    std::vector<float> ss2_{1.0f};
-    std::vector<float> iss2_{1.0f};
+    std::vector<float> ss2_{4.8f};
+    std::vector<float> iss2_{1/4.8f};
 
     // single‐element pyramid
     mutable std::vector<cv::Mat> pyr_{};

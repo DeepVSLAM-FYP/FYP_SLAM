@@ -2201,7 +2201,7 @@ namespace ORB_SLAM3
                         bOK = TrackReferenceKeyFrame();
                         if (std::getenv("DEBUG_TrackT") != nullptr)
                         {
-                            std::cout << "\n[DEBUG][Track] Frame ID: " << mCurrentFrame.mnId << "  [TrackReferenceKeyFrame] " << " tracked: " << bOK << '\n';
+                            std::cout << "\n[DEBUG][Track] Frame ID: " << mCurrentFrame.mnId << "  [TrackReferenceKeyFrame] " << " tracked: " << (bOK ? "SUCCESS" : "FAILED") << '\n';
                         }
                     }
                     else
@@ -2211,13 +2211,13 @@ namespace ORB_SLAM3
                         bOK = TrackWithMotionModel();
                         if (std::getenv("DEBUG_TrackT") != nullptr)
                         {
-                            std::cout << "\n[DEBUG][Track] Frame ID: " << mCurrentFrame.mnId << "  [TrackWithMotionModel] " << " tracked: " << bOK << '\n';
+                            std::cout << "\n[DEBUG][Track] Frame ID: " << mCurrentFrame.mnId << "  [TrackWithMotionModel] " << " tracked: " << (bOK ? "SUCCESS" : "FAILED") << '\n';
                         }
                         if (!bOK){
                             bOK = TrackReferenceKeyFrame();
                             if (std::getenv("DEBUG_TrackT") != nullptr)
                             {
-                                std::cout << "\n Motionmodel failed | Frame ID: " << mCurrentFrame.mnId << "  [TrackReferenceKeyFrame] " << " tracked: " << bOK << '\n';
+                                std::cout << "\n Motionmodel failed | Frame ID: " << mCurrentFrame.mnId << "  [TrackReferenceKeyFrame] " << " tracked: " << (bOK ? "SUCCESS" : "FAILED") << '\n';
                             }
                         }
                     }
@@ -3393,7 +3393,7 @@ bool Tracking::TrackWithMotionModel()
 
         if (mpAtlas->isImuInitialized() && (mCurrentFrame.mnId > mnLastRelocFrameId + mnFramesToResetIMU))
         {
-            if(std::getenv("DEBUG_TrackWithMM") != nullptr)
+            if(std::getenv("DEBUG_TrackWithMMIMU") != nullptr)
             {
                 std::cout << "[DEBUG][Track] Frame ID: " << mCurrentFrame.mnId << "  Using IMU prediction" << std::endl;
             }
@@ -3404,7 +3404,7 @@ bool Tracking::TrackWithMotionModel()
         else
         {
             mCurrentFrame.SetPose(mVelocity * mLastFrame.GetPose());
-            if(std::getenv("DEBUG_TrackWithMM") != nullptr)
+            if(std::getenv("DEBUG_TrackWithMMVel") != nullptr)
             {
                 std::cout << "[DEBUG][Track] Frame ID: " << mCurrentFrame.mnId << "  Using velocity model prediction" 
                         << "  mVelocity: " << mVelocity.matrix() << "  mLastFrame.GetPose(): " << mLastFrame.GetPose().matrix() 
@@ -3422,16 +3422,12 @@ bool Tracking::TrackWithMotionModel()
     else
         th = 15;
 
-        if(std::getenv("DEBUG_TrackWithMM") != nullptr)
-        {
-            std::cout << "[DEBUG] SearchByProjection  CurrentF id=" << mCurrentFrame.mnId << "  LastF id=" << mLastFrame.mnId << "  th=" << th << "  bMono=" << (mSensor == System::MONOCULAR || mSensor == System::IMU_MONOCULAR) << std::endl;
-        }
 
     int nmatches = matcher.SearchByProjection(mCurrentFrame, mLastFrame, th, mSensor == System::MONOCULAR || mSensor == System::IMU_MONOCULAR);
 
         if(std::getenv("DEBUG_TrackWithMM") != nullptr)
         {
-            std::cout << "[DEBUG][Track] Frame ID: " << mCurrentFrame.mnId << "  Initial matches: " << nmatches << std::endl;
+            std::cout << "[DEBUG][TrackWithMM] Frame ID: " << mCurrentFrame.mnId << " Matches after SearchByProjection: " << nmatches << std::endl;
         }
 
         // If few matches, uses a wider window search
@@ -3439,7 +3435,7 @@ bool Tracking::TrackWithMotionModel()
         {
             if(std::getenv("DEBUG_TrackWithMM") != nullptr)
             {
-                std::cout << "[DEBUG][Track] Frame ID: " << mCurrentFrame.mnId << "  Not enough matches, trying wider window" << std::endl;
+                std::cout << "[DEBUG][TrackWithMM] Frame ID: " << mCurrentFrame.mnId << "  Not enough matches, trying wider window" << std::endl;
             }
             Verbose::PrintMess("Not enough matches, wider window search!!", Verbose::VERBOSITY_NORMAL);
             fill(mCurrentFrame.mvpMapPoints.begin(), mCurrentFrame.mvpMapPoints.end(), static_cast<MapPoint *>(NULL));
@@ -3447,7 +3443,7 @@ bool Tracking::TrackWithMotionModel()
             nmatches = matcher.SearchByProjection(mCurrentFrame, mLastFrame, 2 * th, mSensor == System::MONOCULAR || mSensor == System::IMU_MONOCULAR);
             if(std::getenv("DEBUG_TrackWithMM") != nullptr)
             {
-                std::cout << "[DEBUG][Track] Frame ID: " << mCurrentFrame.mnId << "  Wider window matches: " << nmatches << std::endl;
+                std::cout << "[DEBUG][TrackWithMM] Frame ID: " << mCurrentFrame.mnId << "  Wider window matches: " << nmatches << std::endl;
             }
             Verbose::PrintMess("Matches with wider search: " + to_string(nmatches), Verbose::VERBOSITY_NORMAL);
         }
@@ -3456,18 +3452,13 @@ bool Tracking::TrackWithMotionModel()
         {
             if(std::getenv("DEBUG_TrackWithMM") != nullptr)
             {
-                std::cout << "[DEBUG][Track] Frame ID: " << mCurrentFrame.mnId << "  Not enough matches after wider search" << std::endl;
+                std::cout << "[DEBUG][TrackWithMM] Frame ID: " << mCurrentFrame.mnId << "  Not enough matches after wider search" << std::endl;
             }
             Verbose::PrintMess("Not enough matches!!", Verbose::VERBOSITY_NORMAL);
             if (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
                 return true;
             else
                 return false;
-        }
-
-        if(std::getenv("DEBUG_TrackWithMM") != nullptr)
-        {
-            std::cout << "[DEBUG][Track] Frame ID: " << mCurrentFrame.mnId << "  Starting pose optimization" << std::endl;
         }
 
     // Optimize frame pose with all matches
@@ -3505,7 +3496,7 @@ bool Tracking::TrackWithMotionModel()
 
         if(std::getenv("DEBUG_TrackWithMM") != nullptr)
         {
-            std::cout << "[DEBUG][Track] Frame ID: " << mCurrentFrame.mnId << "  After optimization - matches: " << nmatches 
+            std::cout << "[DEBUG][TrackWithMM] Frame ID: " << mCurrentFrame.mnId << "  After optimization - matches: " << nmatches 
                     << "  map matches: " << nmatchesMap << "  outliers: " << noutliers << std::endl;
         }
 
@@ -3514,7 +3505,7 @@ bool Tracking::TrackWithMotionModel()
             mbVO = nmatchesMap < 10;
             if(std::getenv("DEBUG_TrackWithMM") != nullptr)
             {
-                std::cout << "[DEBUG][Track] Frame ID: " << mCurrentFrame.mnId << "  Only tracking mode - VO: " << mbVO << std::endl;
+                std::cout << "[DEBUG][TrackWithMM] Frame ID: " << mCurrentFrame.mnId << "  Only tracking mode - VO: " << mbVO << std::endl;
             }
             return nmatches > 20;
         }
@@ -3523,7 +3514,7 @@ bool Tracking::TrackWithMotionModel()
         {
             if(std::getenv("DEBUG_TrackWithMM") != nullptr)
             {
-                std::cout << "[DEBUG][Track] Frame ID: " << mCurrentFrame.mnId << "  IMU sensor - returning true" << std::endl;
+                std::cout << "[DEBUG][TrackWithMM] Frame ID: " << mCurrentFrame.mnId << "  IMU sensor - returning true" << std::endl;
             }
             return true;
         }
@@ -3531,7 +3522,7 @@ bool Tracking::TrackWithMotionModel()
         {
             if(std::getenv("DEBUG_TrackWithMM") != nullptr)
             {
-                std::cout << "[DEBUG][Track] Frame ID: " << mCurrentFrame.mnId << "  Non-IMU sensor - returning " << (nmatchesMap >= 10) << std::endl;
+                std::cout << "[DEBUG][TrackWithMM] Frame ID: " << mCurrentFrame.mnId << "  Monocular Tracking: " << ((nmatchesMap >= 10) ? "SUCCESS" : "FAILED") << std::endl;
             }
             return nmatchesMap >= 10;
         }
@@ -3539,9 +3530,9 @@ bool Tracking::TrackWithMotionModel()
 
     bool Tracking::TrackLocalMap()
     {
-        if(std::getenv("DEBUG_TrackLocalMap") != nullptr)
+        if(std::getenv("DEBUG_TrackLM") != nullptr)
         {
-            std::cout << "[DEBUG] TrackLocalMap START  Frame id=" << mCurrentFrame.mnId << std::endl;
+            std::cout << "[DEBUG][TrackLM] Frame ID: " << mCurrentFrame.mnId << "  START" << std::endl;
         }
 
         // We have an estimation of the camera pose and some map points tracked in the frame.
@@ -3561,14 +3552,30 @@ bool Tracking::TrackWithMotionModel()
                     aux2++;
             }
 
+        if(std::getenv("DEBUG_TrackLM") != nullptr)
+        {
+            std::cout << "[DEBUG][TrackLM] Frame ID: " << mCurrentFrame.mnId << "  Before optimization - total points: " << aux1 
+                    << "  outliers: " << aux2 << std::endl;
+        }
+
         int inliers;
         if (!mpAtlas->isImuInitialized())
+        {
+            if(std::getenv("DEBUG_TrackLM") != nullptr)
+            {
+                std::cout << "[DEBUG][TrackLM] Frame ID: " << mCurrentFrame.mnId << "  Running PoseOptimization" << std::endl;
+            }
             Optimizer::PoseOptimization(&mCurrentFrame);
+        }
         else
         {
             if (mCurrentFrame.mnId <= mnLastRelocFrameId + mnFramesToResetIMU)
             {
                 Verbose::PrintMess("TLM: PoseOptimization ", Verbose::VERBOSITY_DEBUG);
+                if(std::getenv("DEBUG_TrackLM") != nullptr)
+                {
+                    std::cout << "[DEBUG][TrackLM] Frame ID: " << mCurrentFrame.mnId << "  Running PoseOptimization after reloc" << std::endl;
+                }
                 Optimizer::PoseOptimization(&mCurrentFrame);
             }
             else
@@ -3577,12 +3584,20 @@ bool Tracking::TrackWithMotionModel()
                 if (!mbMapUpdated) //  && (mnMatchesInliers>30))
                 {
                     Verbose::PrintMess("TLM: PoseInertialOptimizationLastFrame ", Verbose::VERBOSITY_DEBUG);
-                    inliers = Optimizer::PoseInertialOptimizationLastFrame(&mCurrentFrame); // , !mpLastKeyFrame->GetMap()->GetIniertialBA1());
+                    if(std::getenv("DEBUG_TrackLM") != nullptr)
+                    {
+                        std::cout << "[DEBUG][TrackLM] Frame ID: " << mCurrentFrame.mnId << "  Running PoseInertialOptimizationLastFrame" << std::endl;
+                    }
+                    inliers = Optimizer::PoseInertialOptimizationLastFrame(&mCurrentFrame);
                 }
                 else
                 {
                     Verbose::PrintMess("TLM: PoseInertialOptimizationLastKeyFrame ", Verbose::VERBOSITY_DEBUG);
-                    inliers = Optimizer::PoseInertialOptimizationLastKeyFrame(&mCurrentFrame); // , !mpLastKeyFrame->GetMap()->GetIniertialBA1());
+                    if(std::getenv("DEBUG_TrackLM") != nullptr)
+                    {
+                        std::cout << "[DEBUG][TrackLM] Frame ID: " << mCurrentFrame.mnId << "  Running PoseInertialOptimizationLastKeyFrame" << std::endl;
+                    }
+                    inliers = Optimizer::PoseInertialOptimizationLastKeyFrame(&mCurrentFrame);
                 }
             }
         }
@@ -3595,6 +3610,12 @@ bool Tracking::TrackWithMotionModel()
                 if (mCurrentFrame.mvbOutlier[i])
                     aux2++;
             }
+
+        if(std::getenv("DEBUG_TrackLM") != nullptr)
+        {
+            std::cout << "[DEBUG][TrackLM] Frame ID: " << mCurrentFrame.mnId << "  After optimization - total points: " << aux1 
+                    << "  outliers: " << aux2 << std::endl;
+        }
 
         mnMatchesInliers = 0;
 
@@ -3619,39 +3640,88 @@ bool Tracking::TrackWithMotionModel()
             }
         }
 
+        if(std::getenv("DEBUG_TrackLM") != nullptr)
+        {
+            std::cout << "[DEBUG][TrackLM] Frame ID: " << mCurrentFrame.mnId << "  Final inliers: " << mnMatchesInliers << std::endl;
+        }
+
         // Decide if the tracking was succesful
         // More restrictive if there was a relocalization recently
         mpLocalMapper->mnMatchesInliers = mnMatchesInliers;
         if (mCurrentFrame.mnId < mnLastRelocFrameId + mMaxFrames && mnMatchesInliers < 50)
+        {
+            if(std::getenv("DEBUG_TrackLM") != nullptr)
+            {
+                std::cout << "[DEBUG][TrackLM] Frame ID: " << mCurrentFrame.mnId << "  Failed - too few matches after reloc" << std::endl;
+            }
             return false;
+        }
 
         if ((mnMatchesInliers > 10) && (mState == RECENTLY_LOST))
+        {
+            if(std::getenv("DEBUG_TrackLM") != nullptr)
+            {
+                std::cout << "[DEBUG][TrackLM] Frame ID: " << mCurrentFrame.mnId << "  Success - recovered from RECENTLY_LOST" << std::endl;
+            }
             return true;
+        }
 
         if (mSensor == System::IMU_MONOCULAR)
         {
             if ((mnMatchesInliers < 15 && mpAtlas->isImuInitialized()) || (mnMatchesInliers < 50 && !mpAtlas->isImuInitialized()))
             {
+                if(std::getenv("DEBUG_TrackLM") != nullptr)
+                {
+                    std::cout << "[DEBUG][TrackLM] Frame ID: " << mCurrentFrame.mnId << "  Failed - IMU_MONOCULAR insufficient matches" << std::endl;
+                }
                 return false;
             }
             else
+            {
+                if(std::getenv("DEBUG_TrackLM") != nullptr)
+                {
+                    std::cout << "[DEBUG][TrackLM] Frame ID: " << mCurrentFrame.mnId << "  Success - IMU_MONOCULAR" << std::endl;
+                }
                 return true;
+            }
         }
         else if (mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
         {
             if (mnMatchesInliers < 15)
             {
+                if(std::getenv("DEBUG_TrackLM") != nullptr)
+                {
+                    std::cout << "[DEBUG][TrackLM] Frame ID: " << mCurrentFrame.mnId << "  Failed - IMU_STEREO/RGBD insufficient matches" << std::endl;
+                }
                 return false;
             }
             else
+            {
+                if(std::getenv("DEBUG_TrackLM") != nullptr)
+                {
+                    std::cout << "[DEBUG][TrackLM] Frame ID: " << mCurrentFrame.mnId << "  Success - IMU_STEREO/RGBD" << std::endl;
+                }
                 return true;
+            }
         }
         else
         {
             if (mnMatchesInliers < 30)
+            {
+                if(std::getenv("DEBUG_TrackLM") != nullptr)
+                {
+                    std::cout << "[DEBUG][TrackLM] Frame ID: " << mCurrentFrame.mnId << "  Failed - Monocular insufficient matches" << std::endl;
+                }
                 return false;
+            }
             else
+            {
+                if(std::getenv("DEBUG_TrackLM") != nullptr)
+                {
+                    std::cout << "[DEBUG][TrackLM] Frame ID: " << mCurrentFrame.mnId << "  Success - Monocular" << std::endl;
+                }
                 return true;
+            }
         }
     }
 
@@ -4013,6 +4083,11 @@ bool Tracking::TrackWithMotionModel()
 
     void Tracking::SearchLocalPoints()
     {
+        if(std::getenv("DEBUG_TrackLM") != nullptr)
+        {
+            std::cout << "[DEBUG][TrackLM] Frame ID: " << mCurrentFrame.mnId << "  SearchLocalPoints START" << std::endl;
+        }
+
         // Do not search map points already matched
         for (vector<MapPoint *>::iterator vit = mCurrentFrame.mvpMapPoints.begin(), vend = mCurrentFrame.mvpMapPoints.end(); vit != vend; vit++)
         {
@@ -4035,6 +4110,7 @@ bool Tracking::TrackWithMotionModel()
 
         int nToMatch = 0;
 
+
         // Project points in frame and check its visibility
         for (vector<MapPoint *>::iterator vit = mvpLocalMapPoints.begin(), vend = mvpLocalMapPoints.end(); vit != vend; vit++)
         {
@@ -4054,6 +4130,11 @@ bool Tracking::TrackWithMotionModel()
             {
                 mCurrentFrame.mmProjectPoints[pMP->mnId] = cv::Point2f(pMP->mTrackProjX, pMP->mTrackProjY);
             }
+        }
+
+        if(std::getenv("DEBUG_TrackLM") != nullptr)
+        {
+            std::cout << "[DEBUG][TrackLM] Frame ID: " << mCurrentFrame.mnId << "  Points to match: " << nToMatch << std::endl;
         }
 
         if (nToMatch > 0)
@@ -4083,11 +4164,16 @@ bool Tracking::TrackWithMotionModel()
 
             int matches = matcher.SearchByProjection(mCurrentFrame, mvpLocalMapPoints, th, mpLocalMapper->mbFarPoints, mpLocalMapper->mThFarPoints);
 
-            if (std::getenv("DEBUG_SearchLocalPointsT") != nullptr)
+            if(std::getenv("DEBUG_TrackLM") != nullptr)
             {
-                std::cout << "[DEBUG][SearchLocalPoints] candidates=" << nToMatch
-                          << " | window_th=" << th
-                          << " | projected matches=" << matches << '\n';
+                std::cout << "[DEBUG][TrackLM] Frame ID: " << mCurrentFrame.mnId << "  threshold: " << th << "  Found matches: " << matches << std::endl;
+            }
+        }
+        else
+        {
+            if(std::getenv("DEBUG_TrackLM") != nullptr)
+            {
+                std::cout << "[DEBUG][TrackLM] Frame ID: " << mCurrentFrame.mnId << "  No points to match" << std::endl;
             }
         }
     }

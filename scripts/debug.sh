@@ -40,7 +40,7 @@ export DEBUG_KeypointVisualization=1    # Debug visualization of keypoints
 # ORBMatcher.cc
 export DEBUG_SearchByProjection=1
 export DEBUG_SearchByBoW=1
-export DEBUG_SearchForInitialization=1
+# export DEBUG_SearchForInitialization=1
 # export DEBUG_SearchForInitializationDist=1
 # export DEBUG_Fuse=1
 export DEBUG_SearchByProjectionKF=1
@@ -64,7 +64,7 @@ export DEBUG_TrackWithMM=1
 # export DEBUG_GrabImageT=1                          # Debug frame grabbing process
 
 # --- Initialization ---
-# export DEBUG_MonocularInitializationT=1            # Debug monocular initialization process
+export DEBUG_MonocularInitializationT=1            # Debug monocular initialization process
 # export DEBUG_MonocularInitializationShowMatchedCoords=1  # Debug coordinates of matched points during initialization 
 
 # Other
