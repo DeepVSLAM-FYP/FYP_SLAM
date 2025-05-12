@@ -107,7 +107,8 @@ int main(int argc, char **argv)
         auto featureProcessor = ORB_SLAM3::PipelinedProcessFactory::CreatePipelinedProcess(
             ORB_SLAM3::FeatureExtractorType::SUPERPOINT,
             inputQueue,
-            outputQueue);
+            outputQueue,
+            featureDir);
 
         // Start the processor thread
         featureProcessor->StartProcessing();

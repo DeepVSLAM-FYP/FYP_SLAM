@@ -20,6 +20,7 @@ unset DEBUG_ComputeThreeMaxima
 unset DEBUG_DISTANCE
 unset DEBUG_TrackT
 unset DEBUG_TrackWithMM
+unset DEBUG_TrackLM
 unset DEBUG_NeedNewKeyFrameT
 unset DEBUG_CreateNewKeyFrameT
 unset DEBUG_SearchLocalPointsT
@@ -38,13 +39,13 @@ export DEBUG_FEAT=1
 export DEBUG_KeypointVisualization=1    # Debug visualization of keypoints  
 
 # ORBMatcher.cc
-export DEBUG_SearchByProjection=1
-export DEBUG_SearchByBoW=1
-export DEBUG_SearchForInitialization=1
+# export DEBUG_SearchByProjection=1
+# export DEBUG_SearchByBoW=1
+# export DEBUG_SearchForInitialization=1
 # export DEBUG_SearchForInitializationDist=1
 # export DEBUG_Fuse=1
-export DEBUG_SearchByProjectionKF=1
-export DEBUG_SearchByProjectionFrame=1
+# export DEBUG_SearchByProjectionKF=1
+# export DEBUG_SearchByProjectionFrame=1
 # export DEBUG_SearchBySim3=1
 # export DEBUG_DescriptorDistance=1
 # export DEBUG_ComputeThreeMaxima=1
@@ -52,9 +53,9 @@ export DEBUG_SearchByProjectionFrame=1
 
 #Tracking.cc
 # --- Main tracking process ---
-export DEBUG_TrackT=1                              # Debug information at the end of Track()
-export DEBUG_TrackWithMM=1                         # Debug tracking with motion model
-export DEBUG_TrackLM=1                             # Debug tracking of local map points
+# export DEBUG_TrackT=1                              # Debug information at the end of Track()
+# export DEBUG_TrackWithMM=1                         # Debug tracking with motion model
+# export DEBUG_TrackLM=1                             # Debug tracking of local map points
 # export DEBUG_NeedNewKeyFrameT=1                    # Debug whether a new keyframe is needed
 # export DEBUG_CreateNewKeyFrameT=1                  # Debug keyframe creation
 # export DEBUG_SearchLocalPointsT=1                  # Debug local point searching process

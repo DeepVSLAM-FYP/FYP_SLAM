@@ -409,7 +409,9 @@ void LocalMapping::CreateNewMapPoints()
 
     float th = 0.6f;
 
-    ORBmatcher matcher(th, GlobalFeatureExtractorInfo::GetFeatureExtractorType() == "ORB" || GlobalFeatureExtractorInfo::GetFeatureExtractorType() == "SIFT" );
+    string featureExtractorType = GlobalFeatureExtractorInfo::GetFeatureExtractorType();
+
+    ORBmatcher matcher(featureExtractorType == "DUMMY" ? 0.7f : th, featureExtractorType == "ORB" || featureExtractorType == "SIFT" );
 
     Sophus::SE3<float> sophTcw1 = mpCurrentKeyFrame->GetPose();
     Eigen::Matrix<float,3,4> eigTcw1 = sophTcw1.matrix3x4();

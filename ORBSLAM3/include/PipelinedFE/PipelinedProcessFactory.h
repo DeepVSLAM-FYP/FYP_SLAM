@@ -29,7 +29,8 @@ public:
     static std::unique_ptr<BasePipelinedProcess> CreatePipelinedProcess(
         FeatureExtractorType type,
         ThreadSafeQueue<InputQueueItem>& inputQueue,
-        ThreadSafeQueue<ResultQueueItem>& outputQueue)
+        ThreadSafeQueue<ResultQueueItem>& outputQueue,
+        const std::string& featureDir = "/mnt/sda1/FYP_2024/Ruchith/FYP_SLAM/datasets/feature_outputs/SP_H")
     {
         switch (type)
         {
@@ -41,7 +42,7 @@ public:
                 return std::make_unique<DummyPipelinedProcess>(
                     inputQueue, 
                     outputQueue,
-                    "/mnt/sda1/FYP_2024/Ruchith/FYP_SLAM/datasets/feature_outputs/SP_H",
+                    featureDir,
                     "SP",
                     CV_32F,
                     256  // SuperPoint descriptor size
@@ -52,7 +53,10 @@ public:
                 return std::make_unique<DummyPipelinedProcess>(
                     inputQueue, 
                     outputQueue,
-                    "/mnt/sda1/FYP_2024/Ruchith/FYP_SLAM/datasets/feature_outputs/SP_H"
+                    featureDir,
+                    "SP",
+                    CV_32F,
+                    256  // SuperPoint descriptor size
                 );
             
             default:

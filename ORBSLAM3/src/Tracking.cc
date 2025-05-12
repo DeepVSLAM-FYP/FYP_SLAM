@@ -3814,7 +3814,7 @@ bool Tracking::TrackWithMotionModel()
 
         // For monocular, use a higher threshold (insert keyframes more frequently)
         if (mSensor == System::MONOCULAR)
-            thRefRatio = 0.9f;
+            thRefRatio = (GlobalFeatureExtractorInfo::GetFeatureExtractorType() == "DUMMY") ? 0.95f : 0.9f;
 
         if (mpCamera2)
             thRefRatio = 0.75f;

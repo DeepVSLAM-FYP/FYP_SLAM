@@ -36,7 +36,7 @@ public:
 private:
     cv::Ptr<cv::SIFT> sift_;
 
-    float scale = std::sqrt(8.0f);
+    float scale = std::sqrt(2.4f);
 
     // all of these vectors will be length=1
     std::vector<float> mvScaleFactor{scale};
