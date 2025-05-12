@@ -1,8 +1,6 @@
 # Add directories or file patterns to ignore during indexing (e.g. foo/ or *.csv)
 Thirdparty/opencv-4.1.0/
-Thirdparty/DBoW3/
 Thirdparty/g2o/
 Thirdparty/pytorch/
 Thirdparty/Sophus/
 Thirdparty/Pangolin/
-SuperPoint_SLAM/
