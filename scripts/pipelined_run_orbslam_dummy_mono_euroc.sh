@@ -11,7 +11,8 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 DATASET=${1:-"V101"}  # Use first argument or default to MH01
 
 # Set feature directory - where to load features from
-FEATURE_DIR=${2:-"$PROJECT_ROOT/datasets/feature_outputs/V101/V101"}  # Default to SP_H directory
+FEATURE_DIR=${2:-"$PROJECT_ROOT/datasets/feature_outputs/V101_h/V101"}  # Default to SP_H directory
+# FEATURE_DIR=${2:-"$PROJECT_ROOT/datasets/feature_outputs/SP_H"}  # Default to SP_TF directory
 # Print paths for debugging
 echo "Running from script directory: $SCRIPT_DIR"
 echo "Project root: $PROJECT_ROOT"
@@ -31,7 +32,7 @@ source "$SCRIPT_DIR/debug.sh"
     "$PROJECT_ROOT/datasets/${DATASET}" \
     "$PROJECT_ROOT/ORBSLAM3/Examples/Monocular/EuRoC_TimeStamps/${DATASET}.txt" \
     "$FEATURE_DIR" \
-    "$PROJECT_ROOT/Trajectories/ORB_Dummy/${DATASET}/" 2>&1 | tee "$PROJECT_ROOT/debug_output/orbslam_pipelined_dummy_debug_log_${DATASET}_$(date +%Y%m%d_%H%M%S).txt"
+    "$PROJECT_ROOT/Trajectories/ORB_Dummy/${DATASET}/" 2>&1 | tee "$PROJECT_ROOT/debug_output/o_p_d_debug_log_${DATASET}_$(date +%Y%m%d_%H%M%S).txt"
 
 echo "ORB-SLAM3 Monocular Pipelined Dummy Extractor run with ${DATASET} completed" 
 

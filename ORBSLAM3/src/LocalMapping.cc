@@ -472,7 +472,7 @@ void LocalMapping::CreateNewMapPoints()
             const float medianDepthKF2 = pKF2->ComputeSceneMedianDepth(2);
             const float ratioBaselineDepth = baseline/medianDepthKF2;
             // If ratio is too small, skip (triangulation would be unreliable)
-            if(ratioBaselineDepth<0.005)
+            if(ratioBaselineDepth<0.01)
                 continue;
         }
 

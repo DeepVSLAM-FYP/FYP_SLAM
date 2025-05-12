@@ -1,6 +1,13 @@
 cmake_minimum_required(VERSION 3.10)
 project(ORB_SLAM3)
 
+option(DEBUG_PRINT "Enable debug print" ON)    
+
+if(DEBUG_PRINT)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DDEBUG_PRINT")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDEBUG_PRINT")
+endif()
+
 IF(NOT CMAKE_BUILD_TYPE)
   SET(CMAKE_BUILD_TYPE Debug)
 ENDIF()
