@@ -384,20 +384,28 @@ void LocalMapping::MapPointCulling()
     }
 }
 
+    /**
+     * @brief Create new map points by triangulating between the current keyframe and its neighboring keyframes to improve tracking robustness
+     */
 
 void LocalMapping::CreateNewMapPoints()
 {
-    // Retrieve neighbor keyframes in covisibility graph
+    // nn: number of best covisible keyframes to search for
+    // Different sensors require different numbers; monocular needs more covisible keyframes for robust mapping
+
     int nn = 10;
-    // For stereo inertial case
+    // For monocular case, increase the number of neighbors
     if(mbMonocular)
         nn=30;
+    // Step 1: Find the top-nn covisible keyframes of the current keyframe
     vector<KeyFrame*> vpNeighKFs = mpCurrentKeyFrame->GetBestCovisibilityKeyFrames(nn);
 
+    // Inertial mode: add more nearby keyframes if needed
     if (mbInertial)
     {
         KeyFrame* pKF = mpCurrentKeyFrame;
         int count=0;
+        // If not enough neighbors and previous keyframes exist, add them up to nn
         while((vpNeighKFs.size()<=nn)&&(pKF->mPrevKF)&&(count++<nn))
         {
             vector<KeyFrame*>::iterator it = std::find(vpNeighKFs.begin(), vpNeighKFs.end(), pKF->mPrevKF);
@@ -408,16 +416,17 @@ void LocalMapping::CreateNewMapPoints()
     }
 
     float th = 0.6f;
-
+    // Feature matching configuration: only accept matches where min dist < 0.6 * second min dist (strict). No rotation check.
     string featureExtractorType = GlobalFeatureExtractorInfo::GetFeatureExtractorType();
-
     ORBmatcher matcher(featureExtractorType == "DUMMY" ? 0.7f : th, featureExtractorType == "ORB" || featureExtractorType == "SIFT" );
 
+    // Get the pose of the current keyframe (world to camera)
     Sophus::SE3<float> sophTcw1 = mpCurrentKeyFrame->GetPose();
     Eigen::Matrix<float,3,4> eigTcw1 = sophTcw1.matrix3x4();
     Eigen::Matrix<float,3,3> Rcw1 = eigTcw1.block<3,3>(0,0);
     Eigen::Matrix<float,3,3> Rwc1 = Rcw1.transpose();
     Eigen::Vector3f tcw1 = sophTcw1.translation();
+    // Camera center in world coordinates and intrinsics
     Eigen::Vector3f Ow1 = mpCurrentKeyFrame->GetCameraCenter();
 
     const float &fx1 = mpCurrentKeyFrame->fx;
@@ -427,14 +436,18 @@ void LocalMapping::CreateNewMapPoints()
     const float &invfx1 = mpCurrentKeyFrame->invfx;
     const float &invfy1 = mpCurrentKeyFrame->invfy;
 
+    // Used for later depth validation; 1.5 is an empirical value
     const float ratioFactor = 1.5f*mpCurrentKeyFrame->mfScaleFactor;
+
+    // The following are for statistics only
     int countStereo = 0;
     int countStereoGoodProj = 0;
     int countStereoAttempt = 0;
     int totalStereoPts = 0;
-    // Search matches with epipolar restriction and triangulate
+    // Step 2: Iterate through neighboring keyframes (Search matches with epipolar restriction and triangulate)
     for(size_t i=0; i<vpNeighKFs.size(); i++)
     {
+        // If a new keyframe arrives, process it first (this is time-consuming)
         if(i>0 && CheckNewKeyFrames())
             return;
 
@@ -442,31 +455,34 @@ void LocalMapping::CreateNewMapPoints()
 
         GeometricCamera* pCamera1 = mpCurrentKeyFrame->mpCamera, *pCamera2 = pKF2->mpCamera;
 
-        // Check first that baseline is not too short
+        // Step 3: Check if the baseline between cameras is long enough
         Eigen::Vector3f Ow2 = pKF2->GetCameraCenter();
         Eigen::Vector3f vBaseline = Ow2-Ow1;
         const float baseline = vBaseline.norm();
 
         if(!mbMonocular)
         {
+            // For stereo: skip if baseline is shorter than the stereo baseline (unstable triangulation)
             if(baseline<pKF2->mb)
                 continue;
         }
         else
         {
+            // For monocular: check baseline-to-depth ratio
             const float medianDepthKF2 = pKF2->ComputeSceneMedianDepth(2);
             const float ratioBaselineDepth = baseline/medianDepthKF2;
-
-            if(ratioBaselineDepth<0.01)
+            // If ratio is too small, skip (triangulation would be unreliable)
+            if(ratioBaselineDepth<0.005)
                 continue;
         }
 
-        // Search matches that fullfil epipolar constraint
+        // Step 4: Find feature matches between the two keyframes using epipolar constraint
         vector<pair<size_t,size_t> > vMatchedIndices;
+        // Inertial mode: use coarse matching if recently lost and after 2nd inertial BA
         bool bCoarse = mbInertial && mpTracker->mState==Tracking::RECENTLY_LOST && mpCurrentKeyFrame->GetMap()->GetIniertialBA2();
-
         matcher.SearchForTriangulation(mpCurrentKeyFrame,pKF2,vMatchedIndices,false,bCoarse);
 
+        // Get pose and intrinsics of the neighbor keyframe
         Sophus::SE3<float> sophTcw2 = pKF2->GetPose();
         Eigen::Matrix<float,3,4> eigTcw2 = sophTcw2.matrix3x4();
         Eigen::Matrix<float,3,3> Rcw2 = eigTcw2.block<3,3>(0,0);
@@ -480,30 +496,30 @@ void LocalMapping::CreateNewMapPoints()
         const float &invfx2 = pKF2->invfx;
         const float &invfy2 = pKF2->invfy;
 
-        // Triangulate each match
+        // Step 5: For each match, attempt to triangulate a 3D point
         const int nmatches = vMatchedIndices.size();
         for(int ikp=0; ikp<nmatches; ikp++)
         {
+            // 5.0: Indices of the match in the current and neighbor keyframes
             const int &idx1 = vMatchedIndices[ikp].first;
             const int &idx2 = vMatchedIndices[ikp].second;
 
+            // 5.1: Get the keypoints in both keyframes
             const cv::KeyPoint &kp1 = (mpCurrentKeyFrame -> NLeft == -1) ? mpCurrentKeyFrame->mvKeysUn[idx1]
                                                                          : (idx1 < mpCurrentKeyFrame -> NLeft) ? mpCurrentKeyFrame -> mvKeys[idx1]
                                                                                                                : mpCurrentKeyFrame -> mvKeysRight[idx1 - mpCurrentKeyFrame -> NLeft];
             const float kp1_ur=mpCurrentKeyFrame->mvuRight[idx1];
             bool bStereo1 = (!mpCurrentKeyFrame->mpCamera2 && kp1_ur>=0);
-            const bool bRight1 = (mpCurrentKeyFrame -> NLeft == -1 || idx1 < mpCurrentKeyFrame -> NLeft) ? false
-                                                                                                         : true;
+            const bool bRight1 = (mpCurrentKeyFrame -> NLeft == -1 || idx1 < mpCurrentKeyFrame -> NLeft) ? false : true;
 
             const cv::KeyPoint &kp2 = (pKF2 -> NLeft == -1) ? pKF2->mvKeysUn[idx2]
                                                             : (idx2 < pKF2 -> NLeft) ? pKF2 -> mvKeys[idx2]
                                                                                      : pKF2 -> mvKeysRight[idx2 - pKF2 -> NLeft];
-
             const float kp2_ur = pKF2->mvuRight[idx2];
             bool bStereo2 = (!pKF2->mpCamera2 && kp2_ur>=0);
-            const bool bRight2 = (pKF2 -> NLeft == -1 || idx2 < pKF2 -> NLeft) ? false
-                                                                               : true;
+            const bool bRight2 = (pKF2 -> NLeft == -1 || idx2 < pKF2 -> NLeft) ? false : true;
 
+            // 5.3: For stereo, determine which camera and pose to use for each keypoint
             if(mpCurrentKeyFrame->mpCamera2 && pKF2->mpCamera2){
                 if(bRight1 && bRight2){
                     sophTcw1 = mpCurrentKeyFrame->GetRightPose();
@@ -556,10 +572,9 @@ void LocalMapping::CreateNewMapPoints()
                 tcw2 = sophTcw2.translation();
             }
 
-            // Check parallax between rays
+            // Step 5.4: Compute parallax angle between rays
             Eigen::Vector3f xn1 = pCamera1->unprojectEig(kp1.pt);
             Eigen::Vector3f xn2 = pCamera2->unprojectEig(kp2.pt);
-
             Eigen::Vector3f ray1 = Rwc1 * xn1;
             Eigen::Vector3f ray2 = Rwc2 * xn2;
             const float cosParallaxRays = ray1.dot(ray2)/(ray1.norm() * ray2.norm());
@@ -568,21 +583,21 @@ void LocalMapping::CreateNewMapPoints()
             float cosParallaxStereo1 = cosParallaxStereo;
             float cosParallaxStereo2 = cosParallaxStereo;
 
+            // Step 5.5: For stereo, use stereo baseline to compute parallax; monocular does nothing special
             if(bStereo1)
                 cosParallaxStereo1 = cos(2*atan2(mpCurrentKeyFrame->mb/2,mpCurrentKeyFrame->mvDepth[idx1]));
             else if(bStereo2)
                 cosParallaxStereo2 = cos(2*atan2(pKF2->mb/2,pKF2->mvDepth[idx2]));
 
             if (bStereo1 || bStereo2) totalStereoPts++;
-            
             cosParallaxStereo = min(cosParallaxStereo1,cosParallaxStereo2);
 
+            // Step 5.6: Triangulate the 3D point
             Eigen::Vector3f x3D;
-
             bool goodProj = false;
             bool bPointStereo = false;
-            if(cosParallaxRays<cosParallaxStereo && cosParallaxRays>0 && (bStereo1 || bStereo2 ||
-                                                                          (cosParallaxRays<0.9996 && mbInertial) || (cosParallaxRays<0.9998 && !mbInertial)))
+            // Use triangulation if parallax is sufficient, otherwise use stereo if available
+            if(cosParallaxRays<cosParallaxStereo && cosParallaxRays>0 && (bStereo1 || bStereo2 || (cosParallaxRays<0.9996 && mbInertial) || (cosParallaxRays<0.9998 && !mbInertial)))
             {
                 goodProj = GeometricTools::Triangulate(xn1, xn2, eigTcw1, eigTcw2, x3D);
                 if(!goodProj)
@@ -592,6 +607,7 @@ void LocalMapping::CreateNewMapPoints()
             {
                 countStereoAttempt++;
                 bPointStereo = true;
+                // For stereo, use the observation with the larger parallax
                 goodProj = mpCurrentKeyFrame->UnprojectStereo(idx1, x3D);
             }
             else if(bStereo2 && cosParallaxStereo2<cosParallaxStereo1)
@@ -602,16 +618,17 @@ void LocalMapping::CreateNewMapPoints()
             }
             else
             {
-                continue; //No stereo and very low parallax
+                continue; // No stereo and very low parallax
             }
 
+            // If triangulation was successful and stereo, count it
             if(goodProj && bPointStereo)
                 countStereoGoodProj++;
 
             if(!goodProj)
                 continue;
 
-            //Check triangulation in front of cameras
+            // Step 5.7: Check if the triangulated point is in front of both cameras
             float z1 = Rcw1.row(2).dot(x3D) + tcw1(2);
             if(z1<=0)
                 continue;
@@ -620,7 +637,7 @@ void LocalMapping::CreateNewMapPoints()
             if(z2<=0)
                 continue;
 
-            //Check reprojection error in first keyframe
+            // Step 5.7: Check reprojection error in the current keyframe
             const float &sigmaSquare1 = mpCurrentKeyFrame->mvLevelSigma2[kp1.octave];
             const float x1 = Rcw1.row(0).dot(x3D)+tcw1(0);
             const float y1 = Rcw1.row(1).dot(x3D)+tcw1(1);
@@ -628,16 +645,16 @@ void LocalMapping::CreateNewMapPoints()
 
             if(!bStereo1)
             {
+                // Monocular: check reprojection error (2 DoF chi2 threshold 5.991)
                 cv::Point2f uv1 = pCamera1->project(cv::Point3f(x1,y1,z1));
                 float errX1 = uv1.x - kp1.pt.x;
                 float errY1 = uv1.y - kp1.pt.y;
-
                 if((errX1*errX1+errY1*errY1)>5.991*sigmaSquare1)
                     continue;
-
             }
             else
             {
+                // Stereo: check reprojection error (3 DoF chi2 threshold 7.8)
                 float u1 = fx1*x1*invz1+cx1;
                 float u1_r = u1 - mpCurrentKeyFrame->mbf*invz1;
                 float v1 = fy1*y1*invz1+cy1;
@@ -648,7 +665,7 @@ void LocalMapping::CreateNewMapPoints()
                     continue;
             }
 
-            //Check reprojection error in second keyframe
+            // Step 5.7: Check reprojection error in the neighbor keyframe
             const float sigmaSquare2 = pKF2->mvLevelSigma2[kp2.octave];
             const float x2 = Rcw2.row(0).dot(x3D)+tcw2(0);
             const float y2 = Rcw2.row(1).dot(x3D)+tcw2(1);
@@ -673,41 +690,34 @@ void LocalMapping::CreateNewMapPoints()
                     continue;
             }
 
-            //Check scale consistency
+            // Step 5.8: Check scale consistency between the two keyframes
             Eigen::Vector3f normal1 = x3D - Ow1;
             float dist1 = normal1.norm();
-
             Eigen::Vector3f normal2 = x3D - Ow2;
             float dist2 = normal2.norm();
-
             if(dist1==0 || dist2==0)
                 continue;
-
-            if(mbFarPoints && (dist1>=mThFarPoints||dist2>=mThFarPoints)) // MODIFICATION
+            if(mbFarPoints && (dist1>=mThFarPoints||dist2>=mThFarPoints))
                 continue;
-
             const float ratioDist = dist2/dist1;
             const float ratioOctave = mpCurrentKeyFrame->mvScaleFactors[kp1.octave]/pKF2->mvScaleFactors[kp2.octave];
-
+            // The ratio of distances and pyramid scale factors should not differ too much
             if(ratioDist*ratioFactor<ratioOctave || ratioDist>ratioOctave*ratioFactor)
                 continue;
 
-            // Triangulation is succesfull
+            // Step 6: Triangulation successful, create a new MapPoint
             MapPoint* pMP = new MapPoint(x3D, mpCurrentKeyFrame, mpAtlas->GetCurrentMap());
             if (bPointStereo)
                 countStereo++;
-            
+            // Step 6.1: Add observations and update MapPoint properties
             pMP->AddObservation(mpCurrentKeyFrame,idx1);
             pMP->AddObservation(pKF2,idx2);
-
             mpCurrentKeyFrame->AddMapPoint(pMP,idx1);
             pKF2->AddMapPoint(pMP,idx2);
-
             pMP->ComputeDistinctiveDescriptors();
-
             pMP->UpdateNormalAndDepth();
-
             mpAtlas->AddMapPoint(pMP);
+            // Step 7: Add the new MapPoint to the recent-added queue for culling
             mlpRecentAddedMapPoints.push_back(pMP);
         }
     }    
