@@ -319,44 +319,13 @@ void MatchVisualizer::ShowMatchedKeypoints(
 void MatchVisualizer::ShowFrameMatches(
     const Frame& lastFrame, 
     const Frame& currentFrame,
+    const std::vector<cv::DMatch>& matches,
     const std::string& windowName,
     int waitTime)
 {
-    std::vector<cv::DMatch> matches;
-    std::vector<cv::KeyPoint> keypoints1, keypoints2;
-    
-    // Convert MapPoints to keypoints and create matches
-    for(size_t i = 0; i < currentFrame.mvpMapPoints.size(); i++)
-    {
-        if(currentFrame.mvpMapPoints[i])
-        {
-            // Use the actual index in the keypoints arrays
-            cv::DMatch match;
-            match.queryIdx = keypoints1.size(); // Current index in keypoints1
-            match.trainIdx = keypoints2.size(); // Current index in keypoints2
-            matches.push_back(match);
-            
-            // Check if the index is within bounds of the keypoint arrays
-            if(i < lastFrame.mvKeysUn.size() && i < currentFrame.mvKeysUn.size()) {
-                keypoints1.push_back(lastFrame.mvKeysUn[i]);
-                keypoints2.push_back(currentFrame.mvKeysUn[i]);
-            }
-            else {
-                // Remove the match we just added since we can't add the keypoints
-                matches.pop_back();
-            }
-        }
-    }
-    
-    // If no matches were found, display a message and return
-    if(matches.empty()) {
-        std::cout << "No matches to display between frames" << std::endl;
-        return;
-    }
-    
     // Draw the matches
     cv::Mat outImg;
-    cv::drawMatches(lastFrame.image, keypoints1, currentFrame.image, keypoints2, matches, outImg);
+    cv::drawMatches(lastFrame.image, lastFrame.mvKeysUn, currentFrame.image, currentFrame.mvKeysUn, matches, outImg);
     
     // Add statistics
     std::string stats = "Matched MapPoints: " + std::to_string(matches.size());

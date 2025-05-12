@@ -137,12 +137,14 @@ public:
      * Display matches between two frames
      * @param lastFrame Previous frame
      * @param currentFrame Current frame
+     * @param matches Vector of DMatch objects representing matches between frames
      * @param windowName Name of the display window
      * @param waitTime Time to wait for keypress (0 = wait indefinitely, 1 = don't wait)
      */
     static void ShowFrameMatches(
         const Frame& lastFrame, 
         const Frame& currentFrame,
+        const std::vector<cv::DMatch>& matches,
         const std::string& windowName = "Frame Matches",
         int waitTime = 1);
 

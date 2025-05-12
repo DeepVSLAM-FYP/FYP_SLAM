@@ -1864,6 +1864,8 @@ namespace ORB_SLAM3
         const Sophus::SE3f Tlw = LastFrame.GetPose();
         const Eigen::Vector3f tlc = Tlw * twc;
 
+        std::vector<cv::DMatch> matches;
+
         const bool bForward = tlc(2) > CurrentFrame.mb && !bMono;
         const bool bBackward = -tlc(2) > CurrentFrame.mb && !bMono;
 
@@ -2060,9 +2062,34 @@ namespace ORB_SLAM3
 
         if (std::getenv("DEBUG_SearchByProjectionFrame"))
         {
+            // Create DMatch vector from the established matches
+            std::vector<cv::DMatch> dMatches;
+            for (int i = 0; i < CurrentFrame.N; i++) 
+            {
+                if (CurrentFrame.mvpMapPoints[i]) 
+                {
+                    MapPoint* pMP = CurrentFrame.mvpMapPoints[i];
+                    // Find this point in the last frame
+                    for (int j = 0; j < LastFrame.N; j++) 
+                    {
+                        if (LastFrame.mvpMapPoints[j] == pMP) 
+                        {
+                            // Create a match
+                            cv::DMatch match;
+                            match.queryIdx = j;    // Index in LastFrame
+                            match.trainIdx = i;    // Index in CurrentFrame
+                            match.distance = 0;    // Placeholder distance
+                            dMatches.push_back(match);
+                            break;
+                        }
+                    }
+                }
+            }
+            
             MatchVisualizer::ShowFrameMatches(
                 LastFrame,
                 CurrentFrame,
+                dMatches,
                 "SearchByProjectionFrame",
                 1
             );
