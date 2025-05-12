@@ -23,8 +23,6 @@ set(PROJECT_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Option to build specific SLAM system
 option(BUILD_ORBSLAM3 "Build ORB-SLAM3" ON)
-option(BUILD_XFEATSLAM "Build XFeatSLAM" OFF)
-# option(BUILD_SUPERPOINTSLAM "Build SuperPointSLAM" OFF)
 
 # Add ORBSLAM3 if enabled
 if(BUILD_ORBSLAM3)
@@ -32,31 +30,13 @@ if(BUILD_ORBSLAM3)
   add_subdirectory(ORBSLAM3)
 endif()
 
-# Add XFeatSLAM if enabled
-if(BUILD_XFEATSLAM)
-  # XFeatSLAM uses C++17
-  add_subdirectory(XFeatSLAM)
-endif()
-
-# Add SuperPointSLAM if enabled
-# if(BUILD_SUPERPOINTSLAM)
-#   # SuperPointSLAM uses C++17
-#   add_subdirectory(SuperPoint_SLAM)
-# endif()
-
 # Message about what's being built
 message(STATUS "Building:")
 if(BUILD_ORBSLAM3)
   message(STATUS "  - ORB-SLAM3 (C++17)")
 endif()
-if(BUILD_XFEATSLAM)
-  message(STATUS "  - XFeatSLAM (C++17)")
-endif()
-# if(BUILD_SUPERPOINTSLAM)
-#   message(STATUS "  - SuperPointSLAM (C++17)")
-# endif()
 
 # Print a warning if nothing is being built
-if(NOT BUILD_ORBSLAM3 AND NOT BUILD_XFEATSLAM)
-  message(WARNING "Neither ORB-SLAM3 nor XFeatSLAM is selected for building!")
+if(NOT BUILD_ORBSLAM3)
+  message(WARNING "ORB-SLAM3 is not selected for building!")
 endif()
