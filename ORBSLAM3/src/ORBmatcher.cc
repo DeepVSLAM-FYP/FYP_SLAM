@@ -219,6 +219,7 @@ namespace ORB_SLAM3
             }
         }
 
+#ifdef DEBUG_PRINT
         if (std::getenv("DEBUG_SearchByProjection"))
         {
 
@@ -254,7 +255,7 @@ namespace ORB_SLAM3
                       << "  TH_HIGH=" << TH_HIGH
                       << std::endl;
         }
-
+#endif
         return nmatches;
     }
 
@@ -467,6 +468,7 @@ namespace ORB_SLAM3
             }
         }
 
+#ifdef DEBUG_PRINT
         if (std::getenv("DEBUG_SearchByBoW"))
         {
             std::cout << "[DEBUG] SearchByBoW  nmatches=" << nmatches
@@ -474,7 +476,7 @@ namespace ORB_SLAM3
                       << "  Frame id=" << F.mnId
                       << std::endl;
         }
-
+#endif
         return nmatches;
     }
 
@@ -581,6 +583,7 @@ namespace ORB_SLAM3
             }
         }
 
+#ifdef DEBUG_PRINT
         if (std::getenv("DEBUG_SearchByProjectionKF"))
         {
             std::cout << "[DEBUG] SearchByProjectionKF  baseKF=" << pKF->mnId
@@ -588,7 +591,7 @@ namespace ORB_SLAM3
                       << "  matches=" << nmatches
                       << std::endl;
         }
-
+#endif
         return nmatches;
     }
 
@@ -702,6 +705,7 @@ namespace ORB_SLAM3
             }
         }
 
+#ifdef DEBUG_PRINT
         if (std::getenv("DEBUG_SearchByProjectionKF"))
         {
             std::cout << "[DEBUG] SearchByProjectionKF  baseKF=" << pKF->mnId
@@ -709,7 +713,7 @@ namespace ORB_SLAM3
                       << "  matches=" << nmatches
                       << std::endl;
         }
-
+#endif
         return nmatches;
     }
 
@@ -819,6 +823,7 @@ namespace ORB_SLAM3
                 discardedThreshold++;
             }
 
+#ifdef DEBUG_PRINT
             if (std::getenv("DEBUG_SearchForInitializationDist"))
             {
                 std::cout << "  i1=" << i1
@@ -828,6 +833,7 @@ namespace ORB_SLAM3
                           << " | vMatchedDistance=" << vMatchedDistance[bestIdx2]
                           << std::endl;
             }
+#endif
         }
 
         if (mbCheckOrientation)
@@ -859,6 +865,7 @@ namespace ORB_SLAM3
             if (vnMatches12[i1] >= 0)
                 vbPrevMatched[i1] = F2.mvKeysUn[vnMatches12[i1]].pt;
 
+#ifdef DEBUG_PRINT
         if (std::getenv("DEBUG_SearchForInitialization"))
         {
             // Print histogram of descriptor distances
@@ -882,7 +889,7 @@ namespace ORB_SLAM3
                     << "  F2 id=" << F2.mnId
                     << std::endl;
         }
-
+#endif
         return nmatches;
     }
 
@@ -1027,21 +1034,21 @@ namespace ORB_SLAM3
             }
         }
 
-        // Add a debug block here
-        if (std::getenv("DEBUG_SearchByBoW"))
-        {
-            std::cout << "[DEBUG] SearchByBoW  nmatches=" << nmatches
-                      << "  KF1 id=" << pKF1->mnId
-                      << "  KF2 id=" << pKF2->mnId
-                      << std::endl;
-        }
-
+        #ifdef DEBUG_PRINT
+                if (std::getenv("DEBUG_SearchByBoW"))
+                {
+                    std::cout << "[DEBUG] SearchByBoW  nmatches=" << nmatches
+                            << "  KF1 id=" << pKF1->mnId
+                            << "  KF2 id=" << pKF2->mnId
+                            << std::endl;
+                }
+        #endif
         return nmatches;
     }
 
     int ORBmatcher::SearchForTriangulation(KeyFrame *pKF1, KeyFrame *pKF2,
                                         vector<pair<size_t, size_t>> &vMatchedPairs, const bool bOnlyStereo, const bool bCoarse)
-    {
+        {
         const fbow::BoWFeatVector &vFeatVec1 = pKF1->mFeatVec;
         const fbow::BoWFeatVector &vFeatVec2 = pKF2->mFeatVec;
 
@@ -1282,7 +1289,7 @@ namespace ORB_SLAM3
             vMatchedPairs.push_back(make_pair(i, vMatches12[i]));
         }
 
-        // add a debug block here
+#ifdef DEBUG_PRINT
         if (std::getenv("DEBUG_SearchForTriangulation"))
         {
             std::cout << "[DEBUG] SearchForTriangulation  nmatches=" << nmatches
@@ -1290,7 +1297,7 @@ namespace ORB_SLAM3
                       << "  KF2 id=" << pKF2->mnId
                       << std::endl;
         }
-
+#endif
         return nmatches;
     }
 
@@ -1486,6 +1493,7 @@ namespace ORB_SLAM3
                 count_thcheck++;
         }
 
+#ifdef DEBUG_PRINT
         if (std::getenv("DEBUG_Fuse"))
         {
             std::cout << "[DEBUG] Fuse  KF id=" << pKF->mnId
@@ -1493,7 +1501,7 @@ namespace ORB_SLAM3
                       << "  fused=" << nFused
                       << std::endl;
         }
-
+#endif
         return nFused;
     }
 
@@ -1611,6 +1619,7 @@ namespace ORB_SLAM3
             }
         }
 
+#ifdef DEBUG_PRINT
         if (std::getenv("DEBUG_Fuse"))
         {
             std::cout << "[DEBUG] Fuse  KF id=" << pKF->mnId
@@ -1618,6 +1627,7 @@ namespace ORB_SLAM3
                       << "  fused=" << nFused
                       << std::endl;
         }
+#endif
         return nFused;
     }
 
@@ -1837,6 +1847,7 @@ namespace ORB_SLAM3
             }
         }
 
+#ifdef DEBUG_PRINT
         if (std::getenv("DEBUG_SearchBySim3"))
         {
             std::cout << "[DEBUG] SearchBySim3  KF1=" << pKF1->mnId
@@ -1844,7 +1855,7 @@ namespace ORB_SLAM3
                       << "  matches=" << nFound
                       << std::endl;
         }
-
+#endif
         return nFound;
     }
 
@@ -2059,7 +2070,7 @@ namespace ORB_SLAM3
                 }
             }
         }
-
+#ifdef DEBUG_PRINT
         if (std::getenv("DEBUG_SearchByProjectionFrame"))
         {
             // Create DMatch vector from the established matches
@@ -2102,7 +2113,7 @@ namespace ORB_SLAM3
                       << "  bMono=" << (bMono ? "true" : "false")
                       << std::endl;
         }
-
+#endif
         return nmatches;
     }
 
@@ -2224,7 +2235,7 @@ namespace ORB_SLAM3
                 }
             }
         }
-
+#ifdef DEBUG_PRINT
         if (std::getenv("DEBUG_SearchByProjectionFrame"))
         {
             std::cout << "[DEBUG] SearchByProjectionKF  "
@@ -2235,6 +2246,7 @@ namespace ORB_SLAM3
                     << "  ORBdist=" << ORBdist
                     << std::endl;
         }
+#endif
         return nmatches;
     }
 
@@ -2279,12 +2291,13 @@ namespace ORB_SLAM3
         {
             ind3 = -1;
         }
-
+#ifdef DEBUG_PRINT
         if (std::getenv("DEBUG_ComputeThreeMaxima"))
         {
             std::cout << "[DEBUG] ComputeThreeMaxima  ind1=" << ind1
                       << " ind2=" << ind2 << " ind3=" << ind3 << std::endl;
         }
+#endif
     }
 
     // updated for floating point descriptors as well
@@ -2328,14 +2341,14 @@ namespace ORB_SLAM3
                 dist = cv::norm(a, b, cv::NORM_L2) * 100;
             }
         }
-
+#ifdef DEBUG_PRINT
         if (std::getenv("DEBUG_DescriptorDistance") != nullptr)
         {
             std::cout << "[DEBUG] DescriptorDistance "
                       << ((a.type() == CV_8U) ? "HAMMING" : "L2²")
                       << "  dist=" << dist << std::endl;
         }
-
+#endif
         return dist;
     }
 

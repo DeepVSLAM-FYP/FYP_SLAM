@@ -46,12 +46,14 @@ int SIFTextractor::operator()(const cv::Mat& image, cv::InputArray mask,
     mvImagePyramid.resize(1);
     mvImagePyramid[0] = image;
 
+#ifdef DEBUG_PRINT
     if(std::getenv("DEBUG_FEAT") != nullptr) 
     {
             std::cout << "Total Keypoints: " << nKeypoints <<
             " | Keypoints in octave 0: " << kps.size() <<             
             std::endl;
     }
+#endif
 
     return static_cast<int>(kps.size());
 }

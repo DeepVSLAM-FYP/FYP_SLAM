@@ -234,14 +234,17 @@ int main(int argc, char **argv)
                 result.keypoints = validKeypoints;
                 result.descriptors = validDescriptors;
                 
+#ifdef DEBUG_PRINT                
                 if (removedCount > 0 && std::getenv("DEBUG_FEAT") != nullptr) {
                     std::cout << "[DEBUG_FEAT] Removed " << removedCount 
                             << " keypoints outside image boundaries after resizing. Remaining: " 
                             << validKeypoints.size() << std::endl;
                 }
+#endif
             }
 
             // Debug visualization of keypoints
+#ifdef DEBUG_PRINT
             if (std::getenv("DEBUG_KeypointVisualization"))
             {
                 // Visualize keypoints on the image
@@ -280,12 +283,12 @@ int main(int argc, char **argv)
                 cv::imshow("Keypoints", imWithKeypoints);
                 cv::waitKey(5); // Wait for 10ms to allow window to update
 
-                // std::cout << "[DEBUG] KeypointVisualization  frame=" << ni 
-                //         << "  keypoints=" << result.keypoints.size() 
-                //         << std::endl;
+                std::cout << "[DEBUG] KeypointVisualization  frame=" << ni 
+                        << "  keypoints=" << result.keypoints.size() 
+                        << std::endl;
                 // std::cout << "[DEBUG] KeypointVisualization END" << std::endl;
             } 
-
+#endif
             // Track using the SLAM system
             SLAM.TrackMonocular(result);
 

@@ -176,6 +176,7 @@ int main(int argc, char **argv)
             
             std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
 
+#ifdef DEBUG_PRINT  
             // Debug visualization of keypoints
             if (std::getenv("DEBUG_KeypointVisualization"))
             {
@@ -209,6 +210,7 @@ int main(int argc, char **argv)
                           << std::endl;
                 // std::cout << "[DEBUG] KeypointVisualization END" << std::endl;
             }
+#endif
             
             // Track using the SLAM system
             SLAM.TrackMonocular(result);

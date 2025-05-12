@@ -525,11 +525,13 @@ void Frame::ExtractORB(int flag, const cv::Mat &im, const int x0, const int x1)
     vector<int> vLapping = {x0,x1};
     if(flag==0){
         monoLeft = (*mpORBextractorLeft)(im,cv::Mat(),mvKeys,mDescriptors,vLapping);
+#ifdef DEBUG_PRINT
         // Check if DEBUG_SLAM environment variable is set
         if(std::getenv("DEBUG_SLAM") != nullptr)
         {
             std::cout << "Frame: "<< this->mnId << " | # of features detected: " << mvKeys.size() << std::endl;
         }
+#endif
     }
     else
         monoRight = (*mpORBextractorRight)(im,cv::Mat(),mvKeysRight,mDescriptorsRight,vLapping);
