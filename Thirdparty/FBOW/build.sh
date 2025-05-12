@@ -10,7 +10,7 @@ mkdir -p build
 cd build
 echo "Building FBOW"
 echo "Configuring FBOW"
-cmake .. -DCMAKE_BUILD_TYPE=DEBUG
+cmake .. -DCMAKE_BUILD_TYPE=RELEASE
 cmake --build . --target install --parallel
 cd $temp_dir
 echo "FBOW installed successfully to {SLAM_ROOT}/ThirdParty/libs"
