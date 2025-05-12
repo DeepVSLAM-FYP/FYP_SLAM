@@ -3727,8 +3727,10 @@ bool Tracking::TrackWithMotionModel()
 
     bool Tracking::NeedNewKeyFrame()
     {
+        // Step 0: If in IMU mode and the current map is not IMU-initialized
         if ((mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD) && !mpAtlas->GetCurrentMap()->isImuInitialized())
         {
+            // If enough time has passed since the last keyframe, insert a new one
             if (mSensor == System::IMU_MONOCULAR && (mCurrentFrame.mTimeStamp - mpLastKeyFrame->mTimeStamp) >= 0.25)
                 return true;
             else if ((mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD) && (mCurrentFrame.mTimeStamp - mpLastKeyFrame->mTimeStamp) >= 0.25)
@@ -3737,10 +3739,11 @@ bool Tracking::TrackWithMotionModel()
                 return false;
         }
 
+        // Step 1: In pure VO mode, do not insert keyframes
         if (mbOnlyTracking)
             return false;
 
-        // If Local Mapping is freezed by a Loop Closure do not insert keyframes
+        // Step 1 (cont.): If local mapping is stopped or requested to stop (e.g., by loop closure), do not insert keyframes
         if (mpLocalMapper->isStopped() || mpLocalMapper->stopRequested())
         {
             /*if(mSensor == System::MONOCULAR)
@@ -3750,24 +3753,25 @@ bool Tracking::TrackWithMotionModel()
             return false;
         }
 
+        // Step 2: Get the number of keyframes in the current map
         const int nKFs = mpAtlas->KeyFramesInMap();
 
-        // Do not insert keyframes if not enough frames have passed from last relocalisation
+        // Step 2 (cont.): Do not insert keyframes if not enough frames have passed since last relocalization and there are already enough keyframes
         if (mCurrentFrame.mnId < mnLastRelocFrameId + mMaxFrames && nKFs > mMaxFrames)
         {
             return false;
         }
 
-        // Tracked MapPoints in the reference keyframe
+        // Step 3: Get the number of tracked map points in the reference keyframe
         int nMinObs = 3;
         if (nKFs <= 2)
             nMinObs = 2;
         int nRefMatches = mpReferenceKF->TrackedMapPoints(nMinObs);
 
-        // Local Mapping accept keyframes?
+        // Step 4: Check if local mapping can accept new keyframes
         bool bLocalMappingIdle = mpLocalMapper->AcceptKeyFrames();
 
-        // Check how many "close" points are being tracked and how many could be potentially created.
+        // Step 5: For stereo or RGBD, count tracked and non-tracked close points
         int nNonTrackedClose = 0;
         int nTrackedClose = 0;
 
@@ -3776,6 +3780,7 @@ bool Tracking::TrackWithMotionModel()
             int N = (mCurrentFrame.Nleft == -1) ? mCurrentFrame.N : mCurrentFrame.Nleft;
             for (int i = 0; i < N; i++)
             {
+                // Only consider points with valid depth in a certain range
                 if (mCurrentFrame.mvDepth[i] > 0 && mCurrentFrame.mvDepth[i] < mThDepth)
                 {
                     if (mCurrentFrame.mvpMapPoints[i] && !mCurrentFrame.mvbOutlier[i])
@@ -3784,31 +3789,37 @@ bool Tracking::TrackWithMotionModel()
                         nNonTrackedClose++;
                 }
             }
+            //number of tracked and non-tracked close points
             // Verbose::PrintMess("[NEEDNEWKF]-> closed points: " + to_string(nTrackedClose) + "; non tracked closed points: " + to_string(nNonTrackedClose), Verbose::VERBOSITY_NORMAL);// Verbose::VERBOSITY_DEBUG);
         }
 
+        // Step 5 (cont.): For stereo/RGBD, if too few close points are tracked and many are untracked, consider inserting a keyframe
         bool bNeedToInsertClose;
         bNeedToInsertClose = (nTrackedClose < 100) && (nNonTrackedClose > 70);
 
-        // Thresholds
+        // Step 6: Set thresholds for keyframe insertion decision
         float thRefRatio = 0.75f;
         if (nKFs < 2)
             thRefRatio = 0.4f;
 
-        /*int nClosedPoints = nTrackedClose + nNonTrackedClose;
+        /*
+        int nClosedPoints = nTrackedClose + nNonTrackedClose;
         const int thStereoClosedPoints = 15;
         if(nClosedPoints < thStereoClosedPoints && (mSensor==System::STEREO || mSensor==System::IMU_STEREO))
         {
             //Pseudo-monocular, there are not enough close points to be confident about the stereo observations.
             thRefRatio = 0.9f;
-        }*/
+        }
+        */
 
+        // For monocular, use a higher threshold (insert keyframes more frequently)
         if (mSensor == System::MONOCULAR)
             thRefRatio = 0.9f;
 
         if (mpCamera2)
             thRefRatio = 0.75f;
 
+        // For IMU-monocular, adjust threshold based on number of inlier matches
         if (mSensor == System::IMU_MONOCULAR)
         {
             if (mnMatchesInliers > 350) // Points tracked from the local map
@@ -3817,17 +3828,16 @@ bool Tracking::TrackWithMotionModel()
                 thRefRatio = 0.90f;
         }
 
-        // Condition 1a: More than "MaxFrames" have passed from last keyframe insertion
+        // Step 6.1: Condition 1a - More than MaxFrames have passed since last keyframe
         const bool c1a = mCurrentFrame.mnId >= mnLastKeyFrameId + mMaxFrames;
-        // Condition 1b: More than "MinFrames" have passed and Local Mapping is idle
-        const bool c1b = ((mCurrentFrame.mnId >= mnLastKeyFrameId + mMinFrames) && bLocalMappingIdle); // mpLocalMapper->KeyframesInQueue() < 2);
-        // Condition 1c: tracking is weak
+        // Step 6.2: Condition 1b - More than MinFrames have passed and local mapping is idle
+        const bool c1b = ((mCurrentFrame.mnId >= mnLastKeyFrameId + mMinFrames) && bLocalMappingIdle);
+        // Step 6.3: Condition 1c - Tracking is weak (for stereo/RGBD)
         const bool c1c = mSensor != System::MONOCULAR && mSensor != System::IMU_MONOCULAR && mSensor != System::IMU_STEREO && mSensor != System::IMU_RGBD && (mnMatchesInliers < nRefMatches * 0.25 || bNeedToInsertClose);
-        // Condition 2: Few tracked points compared to reference keyframe. Lots of visual odometry compared to map matches.
+        // Step 6.4: Condition 2 - Few tracked points compared to reference keyframe, but not too few
         const bool c2 = (((mnMatchesInliers < nRefMatches * thRefRatio || bNeedToInsertClose)) && mnMatchesInliers > 15);
 
-        // std::cout << "NeedNewKF: c1a=" << c1a << "; c1b=" << c1b << "; c1c=" << c1c << "; c2=" << c2 << std::endl;
-        //  Temporal condition for Inertial cases
+        // Step 6.5: Temporal condition for inertial cases (IMU): if enough time has passed since last keyframe
         bool c3 = false;
         if (mpLastKeyFrame)
         {
@@ -3843,12 +3853,14 @@ bool Tracking::TrackWithMotionModel()
             }
         }
 
+        // Step 6.6: For IMU-monocular, if inlier matches are in a certain range or state is RECENTLY_LOST
         bool c4 = false;
         if ((((mnMatchesInliers < 75) && (mnMatchesInliers > 15)) || mState == RECENTLY_LOST) && (mSensor == System::IMU_MONOCULAR)) // MODIFICATION_2, originally ((((mnMatchesInliers<75) && (mnMatchesInliers>15)) || mState==RECENTLY_LOST) && ((mSensor == System::IMU_MONOCULAR)))
             c4 = true;
         else
             c4 = false;
 
+        // Step 6.7: Final decision logic for keyframe insertion
         if (((c1a || c1b || c1c) && c2) || c3 || c4)
         {
             // If the mapping accepts keyframes, insert keyframe.
@@ -3869,9 +3881,11 @@ bool Tracking::TrackWithMotionModel()
             }
             else
             {
+                // If local mapping is busy, try to interrupt bundle adjustment
                 mpLocalMapper->InterruptBA();
                 if (mSensor != System::MONOCULAR && mSensor != System::IMU_MONOCULAR)
                 {
+                    // For stereo, stereo+IMU, or RGBD: if the queue is not too full, insert keyframe
                     if (mpLocalMapper->KeyframesInQueue() < 3)
                     {
                         if (std::getenv("DEBUG_NeedNewKeyFrameT") != nullptr)
@@ -3903,7 +3917,7 @@ bool Tracking::TrackWithMotionModel()
                 }
                 else
                 {
-                    // std::cout << "NeedNewKeyFrame: localmap is busy" << std::endl;
+                    // For monocular, cannot insert keyframe if local mapping is busy
                     if (std::getenv("DEBUG_NeedNewKeyFrameT") != nullptr)
                     {
                         std::cout << "[DEBUG][NeedNewKeyFrame] nMatchesInliers=" << mnMatchesInliers
@@ -3920,6 +3934,7 @@ bool Tracking::TrackWithMotionModel()
         }
         else
         {
+            // If none of the conditions are met, do not insert keyframe
             if (std::getenv("DEBUG_NeedNewKeyFrameT") != nullptr)
             {
                 std::cout << "[DEBUG][NeedNewKeyFrame] nMatchesInliers=" << mnMatchesInliers

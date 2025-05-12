@@ -325,7 +325,16 @@ void MatchVisualizer::ShowFrameMatches(
 {
     // Draw the matches
     cv::Mat outImg;
-    cv::drawMatches(lastFrame.image, lastFrame.mvKeysUn, currentFrame.image, currentFrame.mvKeysUn, matches, outImg);
+    cv::drawMatches(
+        lastFrame.image, lastFrame.mvKeysUn, 
+        currentFrame.image, currentFrame.mvKeysUn, 
+        matches, 
+        outImg,
+        cv::Scalar_<int>::all(-1) ,   // Match color (random)
+        cv::Scalar(0, 0, 255),   // Single point color (red) for keypoints without match
+        std::vector<char>(),     // Mask (empty for all matches)
+        cv::DrawMatchesFlags::DEFAULT
+    );
     
     // Add statistics
     std::string stats = "Matched MapPoints: " + std::to_string(matches.size());
