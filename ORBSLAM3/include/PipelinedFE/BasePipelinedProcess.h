@@ -11,7 +11,7 @@
 #include <atomic>
 #include <memory>
 #include <opencv2/core/core.hpp>
-#include "../utils/ThreadSafeQueue.h"
+#include "utils/ThreadSafeQueue.h"
 #include "../utils/FeatureExtractorTypes.h"
 
 namespace ORB_SLAM3

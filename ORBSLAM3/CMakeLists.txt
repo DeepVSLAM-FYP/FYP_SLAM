@@ -128,6 +128,9 @@ if(BUILD_SP_DPU)
     target_sources(Pipelined_Feature_Extraction PRIVATE
         src/PipelinedFE/SuperPointPipelinedProcess.cc
     )
+    target_link_libraries(Pipelined_Feature_Extraction
+        ${PROJECT_ROOT_DIR}/Thirdparty/super_point_vitis/lib/libSuperPointLib.so
+    )
 endif()
 
 target_link_libraries(Pipelined_Feature_Extraction
