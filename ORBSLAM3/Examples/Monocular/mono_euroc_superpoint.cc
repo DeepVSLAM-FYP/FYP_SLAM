@@ -32,6 +32,13 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    // Print all arguments
+    cout << "Arguments received:" << endl;
+    for(int i = 0; i < argc; i++) {
+        cout << "argv[" << i << "]: " << argv[i] << endl;
+    }
+    cout << endl;
+
     // Optional parameters with defaults
     string modelName = "/root/jupyter_notebooks/Fyp/FYP_SLAM/Thirdparty/super_point_vitis/compiled_SP_by_H.xmodel";
     int numThreads = 4;
