@@ -1,0 +1,4 @@
+[submodule "Thirdparty/super_point_vitis"]
+	path = Thirdparty/super_point_vitis
+	url = ./Thirdparty/super_point_vitis
+	branch = FYPSLAM_compatible
