@@ -1,4 +1,4 @@
 [submodule "Thirdparty/super_point_vitis"]
 	path = Thirdparty/super_point_vitis
-	url = ./Thirdparty/super_point_vitis
+	url = https://github.com/RuchchaSD/super_point_vitis.git
 	branch = FYPSLAM_compatible
