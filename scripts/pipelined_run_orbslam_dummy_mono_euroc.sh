@@ -11,7 +11,7 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 DATASET=${1:-"V101"}  # Use first argument or default to MH01
 
 # Set feature directory - where to load features from
-FEATURE_DIR=${2:-"$PROJECT_ROOT/datasets/feature_outputs/V101_h/V101"}  # Default to SP_H directory
+FEATURE_DIR=${2:-"$PROJECT_ROOT/datasets/feature_outputs/SP_H/V101"}  # Default to SP_H directory
 # FEATURE_DIR=${2:-"$PROJECT_ROOT/datasets/feature_outputs/SP_H"}  # Default to SP_TF directory
 # Print paths for debugging
 echo "Running from script directory: $SCRIPT_DIR"

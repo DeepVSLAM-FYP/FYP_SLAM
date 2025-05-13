@@ -94,3 +94,4 @@ Vocabulary/*
 .cursor
 _results/
 temp
+debug_output/
