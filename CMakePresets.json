@@ -1,0 +1,76 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 19,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "default",
+      "displayName": "Default Config",
+      "description": "Default build configuration using system-installed dependencies",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "BUILD_ORBSLAM3": "ON",
+        "BUILD_SP_DPU": "ON"
+      }
+    },
+    {
+      "name": "kr260",
+      "displayName": "KR260 Configuration",
+      "description": "Build using sysroot at /mnt/kr260 for an embedded device",
+      "inherits": "default",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build/kr260",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_SYSROOT": "/mnt/kr260",
+        "CMAKE_FIND_ROOT_PATH": "/mnt/kr260",
+        "CMAKE_FIND_ROOT_PATH_MODE_PROGRAM": "NEVER",
+        "CMAKE_FIND_ROOT_PATH_MODE_LIBRARY": "ONLY",
+        "CMAKE_FIND_ROOT_PATH_MODE_INCLUDE": "ONLY",
+        "CMAKE_FIND_ROOT_PATH_MODE_PACKAGE": "ONLY",
+        "Eigen3_DIR": "/mnt/kr260/Thirdparty/libs/share/eigen3/cmake",
+        "Pangolin_DIR": "/mnt/kr260/Thirdparty/libs/lib/cmake/Pangolin",
+        "USE_TOOLCHAIN": "ON",
+        "CMAKE_TOOLCHAIN_FILE": "/mnt/kr260/toolchain-kr260.cmake",
+        "CMAKE_SKIP_BUILD_RPATH": "FALSE",
+        "CMAKE_BUILD_WITH_INSTALL_RPATH": "FALSE",
+        "CMAKE_INSTALL_RPATH_USE_LINK_PATH": "TRUE",
+        "CMAKE_INSTALL_RPATH": "$ORIGIN/../lib:/usr/lib:/usr/local/lib"
+      }
+    },
+    {
+      "name": "kr260-debug",
+      "displayName": "KR260 Debug Configuration",
+      "description": "Debug build using sysroot at /mnt/kr260",
+      "inherits": "kr260",
+      "binaryDir": "${sourceDir}/build/kr260-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "DEBUG_PRINT": "ON",
+        "O3_DEBUG": "OFF"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "default",
+      "configurePreset": "default",
+      "jobs": 4
+    },
+    {
+      "name": "kr260",
+      "configurePreset": "kr260",
+      "jobs": 4
+    },
+    {
+      "name": "kr260-debug",
+      "configurePreset": "kr260-debug",
+      "jobs": 4
+    }
+  ]
+} 

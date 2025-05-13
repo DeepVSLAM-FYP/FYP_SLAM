@@ -6,14 +6,14 @@
                 "${workspaceFolder}/ORBSLAM3/include",
                 "${workspaceFolder}/Thirdparty",
                 "${workspaceFolder}/ORBSLAM3/include/CameraModels",
-                "${workspaceFolder}/Thirdparty/DBoW2/DBoW2",
                 "${workspaceFolder}/Thirdparty/libs/include",
                 "${workspaceFolder}/Thirdparty/libs/include/eigen3",
                 "${workspaceFolder}",
-                "${workspaceFolder}/Thirdparty/pytorch/torch/include/torch/csrc/api/include",
                 "${workspaceFolder}/ORBSLAM3",
                 "${workspaceFolder}/ORBSLAM3/include/FeatureExtractors",
-                "/usr/local/include/opencv4"
+                "/mnt/kr260/usr/include/",
+                "${workspaceFolder}/Thirdparty/super_point_vitis/include",
+                "/mnt/kr260/usr/include/opencv4"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
