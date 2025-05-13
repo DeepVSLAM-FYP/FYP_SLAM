@@ -93,3 +93,4 @@ Vocabulary/*
 !Vocabulary/.gitignore
 .cursor
 _results/
+temp

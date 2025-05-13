@@ -12,4 +12,4 @@ echo "Configuring Sophus"
 cmake ..
 cmake --build . --target install --parallel
 cd $temp_dir
-echo "G2O installed successfully to {SLAM_ROOT}/ThirdParty/libs"
+echo "Sophus installed successfully to {SLAM_ROOT}/ThirdParty/libs"

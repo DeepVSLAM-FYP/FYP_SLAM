@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 project(ORB_SLAM3)
 
 IF(NOT CMAKE_BUILD_TYPE)
-  SET(CMAKE_BUILD_TYPE Debug)
+  SET(CMAKE_BUILD_TYPE Release)
 ENDIF()
 
 MESSAGE("Build type: " ${CMAKE_BUILD_TYPE})
@@ -65,6 +65,15 @@ include_directories(
         ${Pangolin_INCLUDE_DIRS}
 )
 
+# Add SuperPoint include directories if enabled
+if(BUILD_SP_DPU)
+    include_directories(
+        ${PROJECT_ROOT_DIR}/Thirdparty/super_point_vitis/include
+    )
+    # Define a macro to enable conditional compilation
+    add_definitions(-DBUILD_SP_DPU)
+endif()
+
 # Set output directory for libraries
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_ROOT_DIR}/lib/ORB)
 
@@ -79,6 +88,12 @@ set(COMMON_LIBRARIES
     -lboost_serialization
     -lcrypto
 )
+
+if(BUILD_SP_DPU)
+    set(COMMON_LIBRARIES ${COMMON_LIBRARIES}
+        ${PROJECT_ROOT_DIR}/Thirdparty/super_point_vitis/lib/libSuperPointLib.so
+    )
+endif()
 
 add_library(Match_Visualizer SHARED
     src/MatchVisualizer.cc
@@ -105,7 +120,15 @@ target_link_libraries( Feature_Extractors
 add_library(Pipelined_Feature_Extraction SHARED
     src/PipelinedFE/DummyPipelinedProcess.cc
     src/PipelinedFE/ORBPipelinedProcess.cc
+    src/PipelinedFE/PipelinedProcessFactory.cc
 )
+
+# Conditionally add SuperPoint implementation if enabled
+if(BUILD_SP_DPU)
+    target_sources(Pipelined_Feature_Extraction PRIVATE
+        src/PipelinedFE/SuperPointPipelinedProcess.cc
+    )
+endif()
 
 target_link_libraries(Pipelined_Feature_Extraction
     ${OpenCV_LIBS}
@@ -187,6 +210,14 @@ target_link_libraries(mono_euroc_pipelined ${PROJECT_NAME})
 add_executable(mono_euroc_pipelined_dummy
         Examples/Monocular/mono_euroc_pipelined_dummy.cc)
 target_link_libraries(mono_euroc_pipelined_dummy ${PROJECT_NAME})
+
+# Add SuperPoint real-time feature extraction executable only if BUILD_SP_DPU is enabled
+if(BUILD_SP_DPU)
+    add_executable(mono_euroc_superpoint
+            Examples/Monocular/mono_euroc_superpoint.cc)
+    target_link_libraries(mono_euroc_superpoint ${PROJECT_NAME})
+    message(STATUS "Building SuperPoint DPU real-time feature extraction executable")
+endif()
 
 #TODO: make these examples work
 # add_executable(monoORB_tum
