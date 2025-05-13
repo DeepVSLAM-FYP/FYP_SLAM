@@ -44,7 +44,7 @@ int main(int argc, char **argv)
     int numThreads = 4;
 
     // Parse optional model name and thread count if provided
-    if (argc >= 6 && string(argv[5]).find("/") == string::npos) {
+    if (argc >= 6 && string(argv[5]).find("/") != string::npos) {
         modelName = string(argv[5]);
         cout << "Using SuperPoint model: " << modelName << endl;
     }
@@ -55,14 +55,11 @@ int main(int argc, char **argv)
     }
 
     // Determine the number of sequences based on the command line arguments
-    int offset = 0;
-    if (argc >= 6 && string(argv[5]).find("/") == string::npos) offset++;
-    if (argc >= 7 && isdigit(argv[6][0])) offset++;
-
-    const int num_seq = (argc - 4 - offset) / 2;
+    // No offset needed - dataset and timestamp arguments are always at positions 3 and 4
+    const int num_seq = 1; // For now, just handle a single sequence
     cout << "num_seq = " << num_seq << endl;
     
-    bool bFileName = (((argc - 4 - offset) % 2) == 1);
+    bool bFileName = (argc >= 8);
     string file_name;
     if (bFileName)
     {
@@ -84,8 +81,9 @@ int main(int argc, char **argv)
     for (seq = 0; seq < num_seq; seq++)
     {
         cout << "Loading images for sequence " << seq << "...";
-        LoadImages(string(argv[(2 * seq) + 3 + offset]) + "/mav0/cam0/data", 
-                  string(argv[(2 * seq) + 4 + offset]), 
+        // Use the fixed positions 3 and 4 for dataset and timestamps
+        LoadImages(string(argv[3]) + "/mav0/cam0/data", 
+                  string(argv[4]), 
                   vstrImageFilenames[seq], 
                   vTimestampsCam[seq]);
         cout << "LOADED!" << endl;
@@ -387,42 +385,62 @@ int main(int argc, char **argv)
 void LoadImages(const string &strImagePath, const string &strPathTimes,
                 vector<string> &vstrImages, vector<double> &vTimeStamps)
 {
+    cout << "Image path: " << strImagePath << endl;
+    cout << "Timestamp file: " << strPathTimes << endl;
+    
     ifstream fTimes;
     fTimes.open(strPathTimes.c_str());
+    
+    if(!fTimes.is_open()) {
+        cerr << "ERROR: Cannot open timestamp file: " << strPathTimes << endl;
+        return;
+    }
+    
     vTimeStamps.reserve(5000);
     vstrImages.reserve(5000);
+    
     while(!fTimes.eof())
     {
         string s;
         getline(fTimes,s);
-        if(!s.empty())
-        {
-            // Extract just the timestamp value (remove any whitespace)
-            string timestamp;
-            stringstream ss(s);
-            ss >> timestamp;
-            
-            // Only add the image if we have a valid timestamp
-            if(!timestamp.empty()) {
-                vstrImages.push_back(strImagePath + "/" + timestamp + ".png");
-                
-                // Convert timestamp to double
-                double t;
-                try {
-                    t = stod(timestamp);
-                    vTimeStamps.push_back(t*1e-9);
-                } catch(const std::exception& e) {
-                    cerr << "Error parsing timestamp: " << timestamp << endl;
-                    // Use the last timestamp or 0 if no previous timestamp
-                    t = vTimeStamps.empty() ? 0 : vTimeStamps.back();
-                    vTimeStamps.push_back(t);
-                }
+        
+        // Skip empty lines
+        if(s.empty()) continue;
+        
+        // Check if the line contains only digits (timestamp)
+        bool isNumeric = true;
+        for(char c : s) {
+            if(!isdigit(c) && c != ' ' && c != '\t' && c != '\n' && c != '\r') {
+                isNumeric = false;
+                break;
             }
         }
+        
+        if(!isNumeric) {
+            // Skip non-numeric lines that might be headers or comments
+            continue;
+        }
+        
+        // Extract the timestamp
+        stringstream ss(s);
+        double t;
+        ss >> t;
+        
+        if(ss.fail()) {
+            cerr << "Error parsing line as timestamp: " << s << endl;
+            continue;
+        }
+        
+        // Create the image filename from the timestamp
+        string timestamp = s.substr(0, s.find_first_of(" \t\n\r"));
+        string imagePath = strImagePath + "/" + timestamp + ".png";
+        
+        vstrImages.push_back(imagePath);
+        vTimeStamps.push_back(t * 1e-9);
     }
     
     if(vstrImages.empty()) {
-        cerr << "WARNING: No images loaded from " << strPathTimes << endl;
+        cerr << "WARNING: No valid timestamps found in " << strPathTimes << endl;
     } else {
         cout << "Loaded " << vstrImages.size() << " image paths" << endl;
     }
