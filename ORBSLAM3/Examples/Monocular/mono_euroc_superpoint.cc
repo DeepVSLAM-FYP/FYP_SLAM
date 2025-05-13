@@ -384,18 +384,39 @@ void LoadImages(const string &strImagePath, const string &strPathTimes,
     fTimes.open(strPathTimes.c_str());
     vTimeStamps.reserve(5000);
     vstrImages.reserve(5000);
-    while (!fTimes.eof())
+    while(!fTimes.eof())
     {
         string s;
-        getline(fTimes, s);
-        if (!s.empty())
+        getline(fTimes,s);
+        if(!s.empty())
         {
-            stringstream ss;
-            ss << s;
-            vstrImages.push_back(strImagePath + "/" + ss.str() + ".png");
-            double t;
-            ss >> t;
-            vTimeStamps.push_back(t * 1e-9);
+            // Extract just the timestamp value (remove any whitespace)
+            string timestamp;
+            stringstream ss(s);
+            ss >> timestamp;
+            
+            // Only add the image if we have a valid timestamp
+            if(!timestamp.empty()) {
+                vstrImages.push_back(strImagePath + "/" + timestamp + ".png");
+                
+                // Convert timestamp to double
+                double t;
+                try {
+                    t = stod(timestamp);
+                    vTimeStamps.push_back(t*1e-9);
+                } catch(const std::exception& e) {
+                    cerr << "Error parsing timestamp: " << timestamp << endl;
+                    // Use the last timestamp or 0 if no previous timestamp
+                    t = vTimeStamps.empty() ? 0 : vTimeStamps.back();
+                    vTimeStamps.push_back(t);
+                }
+            }
         }
+    }
+    
+    if(vstrImages.empty()) {
+        cerr << "WARNING: No images loaded from " << strPathTimes << endl;
+    } else {
+        cout << "Loaded " << vstrImages.size() << " image paths" << endl;
     }
 } 
