@@ -15,6 +15,7 @@ THIRDPARTY_LIBS="Thirdparty/libs/" # Thirdparty libs path
 ORBSLAM3_EXAMPLES="Examples/ORB" # ORBSLAM3 executable path
 BUILD_DIR="build"  # Build directory
 VOCABULARY_PATH="Vocabulary"
+SUPERPOINT_LIBS="Thirdparty/super_point_vitis/lib/"
 
 # Create directories if they don't exist
 mkdir -p "$ORBSLAM3_LIBS"
@@ -47,8 +48,14 @@ rsync $RSYNC_OPTS -e "$SSH_OPTS" --delete "$REMOTE_TARGET_1/$ORBSLAM3_EXAMPLES/"
 echo "Syncing build folder..."
 rsync $RSYNC_OPTS -e "$SSH_OPTS" --delete "$REMOTE_TARGET_1/$BUILD_DIR/" "$BUILD_DIR/"
 
+# Sync SuperPoint libs
+echo "Syncing SuperPoint libs..."
+rsync $RSYNC_OPTS -e "$SSH_OPTS" --delete "$REMOTE_TARGET_1/$SUPERPOINT_LIBS/" "$SUPERPOINT_LIBS/"
+
 # Sync Vocabulary folder
 echo "Syncing Vocabulary folder..."
 rsync $RSYNC_OPTS -e "$SSH_OPTS" "$REMOTE_TARGET_2/$VOCABULARY_PATH/" "$VOCABULARY_PATH/"
+
+
 
 echo "Deployment complete!" 
