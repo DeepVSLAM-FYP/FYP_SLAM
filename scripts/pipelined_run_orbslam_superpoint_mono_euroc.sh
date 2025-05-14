@@ -11,7 +11,8 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 DATASET=${1:-"V101"}  # Use first argument or default to V101
 
 # Set SuperPoint model path (default to compiled_SP_by_H.xmodel)
-MODEL_PATH=${2:-"$PROJECT_ROOT/Thirdparty/super_point_vitis/superpoint_tf.xmodel"}
+# MODEL_PATH=${2:-"$PROJECT_ROOT/Thirdparty/super_point_vitis/superpoint_tf.xmodel"}
+MODEL_PATH=${2:-"$PROJECT_ROOT/Thirdparty/super_point_vitis/compiled_SP_by_H.xmodel"}
 
 # Set number of threads (default 4)
 NUM_THREADS=${3:-4}
