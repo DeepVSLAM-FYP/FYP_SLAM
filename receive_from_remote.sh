@@ -2,6 +2,8 @@
 
 set -e
 
+git pull
+
 REMOTE_URL="root@192.248.10.70"
 REMOTE_PATH_1="/mnt/kr260/root/jupyter_notebooks/Fyp/FYP_SLAM"
 REMOTE_PATH_2="/mnt/sda1/FYP_2024/Ruchith/FYP_SLAM"
