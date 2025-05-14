@@ -8,7 +8,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 # Set dataset variable - replace MH01,V101 with desired sequence if needed
-DATASET=${1:-"V101"}  # Use first argument or default to MH01
+DATASET=${1:-"MH01"}  # Use first argument or default to MH01
 
 # Set feature directory - where to load features from
 FEATURE_DIR=${2:-"$PROJECT_ROOT/datasets/feature_outputs/SP_TF/V101"}  # Default to SP_H directory
