@@ -196,7 +196,8 @@ int main(int argc, char **argv)
 
             std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
 
-            // resize keypoints if needed
+            // resize keypoints if needed - this is not needed for real-time inference
+            /*
             if (SLAM.settings_ && SLAM.settings_->needToResize())
             {
                 cv::Size newSize = SLAM.settings_->newImSize();
@@ -221,7 +222,7 @@ int main(int argc, char **argv)
                 }
                 result.keypoints = newKeypoints;
             }
-
+            */
             // Filter out keypoints that are outside the image boundaries
             const int imgWidth = result.image.cols;
             const int imgHeight = result.image.rows;
