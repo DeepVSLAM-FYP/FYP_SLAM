@@ -36,25 +36,25 @@ SSH_OPTS="ssh -T -c aes128-gcm@openssh.com \
 echo "Syncing ORBSLAM3 built libraries..."
 rsync $RSYNC_OPTS -e "$SSH_OPTS" --delete "$REMOTE_TARGET_1/$ORBSLAM3_LIBS/" "$ORBSLAM3_LIBS/"
 
-# Sync Thirdparty built libraries
-echo "Syncing Thirdparty built libraries..."
-rsync $RSYNC_OPTS -e "$SSH_OPTS" --delete "$REMOTE_TARGET_1/$THIRDPARTY_LIBS/" "$THIRDPARTY_LIBS/"
+# # Sync Thirdparty built libraries
+# echo "Syncing Thirdparty built libraries..."
+# rsync $RSYNC_OPTS -e "$SSH_OPTS" --delete "$REMOTE_TARGET_1/$THIRDPARTY_LIBS/" "$THIRDPARTY_LIBS/"
 
 # Sync ORBSLAM3 executables
 echo "Syncing ORBSLAM3 executables..."
 rsync $RSYNC_OPTS -e "$SSH_OPTS" --delete "$REMOTE_TARGET_1/$ORBSLAM3_EXAMPLES/" "$ORBSLAM3_EXAMPLES/"
 
 # Sync build folder
-echo "Syncing build folder..."
-rsync $RSYNC_OPTS -e "$SSH_OPTS" --delete "$REMOTE_TARGET_1/$BUILD_DIR/" "$BUILD_DIR/"
+# echo "Syncing build folder..."
+# rsync $RSYNC_OPTS -e "$SSH_OPTS" --delete "$REMOTE_TARGET_1/$BUILD_DIR/" "$BUILD_DIR/"
 
-# Sync SuperPoint libs
-echo "Syncing SuperPoint libs..."
-rsync $RSYNC_OPTS -e "$SSH_OPTS" --delete "$REMOTE_TARGET_1/$SUPERPOINT_LIBS/" "$SUPERPOINT_LIBS/"
+# # Sync SuperPoint libs
+# echo "Syncing SuperPoint libs..."
+# rsync $RSYNC_OPTS -e "$SSH_OPTS" --delete "$REMOTE_TARGET_1/$SUPERPOINT_LIBS/" "$SUPERPOINT_LIBS/"
 
-# Sync Vocabulary folder
-echo "Syncing Vocabulary folder..."
-rsync $RSYNC_OPTS -e "$SSH_OPTS" "$REMOTE_TARGET_2/$VOCABULARY_PATH/" "$VOCABULARY_PATH/"
+# # Sync Vocabulary folder
+# echo "Syncing Vocabulary folder..."
+# rsync $RSYNC_OPTS -e "$SSH_OPTS" "$REMOTE_TARGET_2/$VOCABULARY_PATH/" "$VOCABULARY_PATH/"
 
 
 
