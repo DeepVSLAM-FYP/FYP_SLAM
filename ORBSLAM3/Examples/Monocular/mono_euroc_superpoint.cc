@@ -344,7 +344,7 @@ int main(int argc, char **argv)
                 
                 // Display the image with keypoints
                 cv::imshow("Extracted keypoints", imWithKeypoints);
-                cv::waitKey(5); // Wait for 5ms to allow window to update
+                cv::waitKey(1); // Wait for 5ms to allow window to update
 
             } 
 
