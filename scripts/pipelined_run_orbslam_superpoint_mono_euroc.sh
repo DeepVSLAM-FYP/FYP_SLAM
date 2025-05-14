@@ -8,7 +8,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 # Set dataset variable - replace V101 with desired sequence if needed
-DATASET=${1:-"V101"}  # Use first argument or default to V101
+DATASET=${1:-"MH01"}  # Use first argument or default to V101
 
 # Set SuperPoint model path (default to compiled_SP_by_H.xmodel)
 # MODEL_PATH=${2:-"$PROJECT_ROOT/Thirdparty/super_point_vitis/superpoint_tf.xmodel"}
