@@ -104,8 +104,17 @@ int main(int argc, char **argv)
 
     int fps = 20;
     float dT = 1.f / fps;
+
+    //SLAM load time
+    std::chrono::steady_clock::time_point SLAM_start = std::chrono::steady_clock::now();
+
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
     ORB_SLAM3::System SLAM(argv[1], argv[2], ORB_SLAM3::System::MONOCULAR, true);
+
+    std::chrono::steady_clock::time_point SLAM_end = std::chrono::steady_clock::now();
+    float SLAM_load_time = std::chrono::duration_cast<std::chrono::duration<double>>(SLAM_end - SLAM_start).count() * 1000.0;
+    cout << "loaded SLAM in " << SLAM_load_time/1000.0 << " s" << endl;
+
     float imageScale = SLAM.GetImageScale();
 
     // Queue sizes
@@ -293,6 +302,7 @@ int main(int argc, char **argv)
             */
 
             // Debug visualization of keypoints
+// #define DEBUG_PRINT
 #ifdef DEBUG_PRINT
             if (std::getenv("DEBUG_KeypointVisualization"))
             {
@@ -308,22 +318,45 @@ int main(int argc, char **argv)
                 std::string fpsText = "FPS: " + std::to_string(static_cast<int>(currentFps + 0.5));
                 std::string dequeueText = "Dequeue: " + std::to_string(static_cast<int>(dequeueLatency + 0.5)) + " ms";
                 std::string trackText = "Track: " + std::to_string(static_cast<int>(trackLatency + 0.5)) + " ms";
+                std::string featuresText = "#Feat: " + std::to_string(result.keypoints.size());
+                std::string imageIdText = "ImID: " + std::to_string(ni);
                 
-                cv::putText(imWithKeypoints, fpsText, cv::Point(20, 30), cv::FONT_HERSHEY_SIMPLEX, 0.75, cv::Scalar(0, 0, 255), 2);
-                cv::putText(imWithKeypoints, dequeueText, cv::Point(20, 60), cv::FONT_HERSHEY_SIMPLEX, 0.75, cv::Scalar(0, 0, 255), 2);
-                cv::putText(imWithKeypoints, trackText, cv::Point(20, 90), cv::FONT_HERSHEY_SIMPLEX, 0.75, cv::Scalar(0, 0, 255), 2);
+                cv::putText(imWithKeypoints, fpsText, cv::Point(20, 30), cv::FONT_HERSHEY_SIMPLEX, 0.75, cv::Scalar(255, 0, 0), 2);
+                cv::putText(imWithKeypoints, dequeueText, cv::Point(20, 60), cv::FONT_HERSHEY_SIMPLEX, 0.75, cv::Scalar(255, 0, 0), 2);
+                cv::putText(imWithKeypoints, trackText, cv::Point(20, 90), cv::FONT_HERSHEY_SIMPLEX, 0.75, cv::Scalar(255, 0, 0), 2);
+                
+                // Position text in bottom right corner
+                int fontFace = cv::FONT_HERSHEY_SIMPLEX;
+                double fontScale = 0.75;
+                int thickness = 2;
+                cv::Size featTextSize = cv::getTextSize(featuresText, fontFace, fontScale, thickness, nullptr);
+                cv::Size idTextSize = cv::getTextSize(imageIdText, fontFace, fontScale, thickness, nullptr);
+                
+                // Calculate positions for upper right corner
+                cv::Point featTextPos(imWithKeypoints.cols - featTextSize.width - 20, 
+                                    30);  // 30 pixels from top
+                cv::Point idTextPos(imWithKeypoints.cols - idTextSize.width - 20, 
+                                  30 + featTextSize.height + 10);  // 10 pixels spacing between texts
+                
+                // Draw text in upper right
+                cv::putText(imWithKeypoints, featuresText, featTextPos, fontFace, fontScale, cv::Scalar(255, 0, 0), thickness);
+                cv::putText(imWithKeypoints, imageIdText, idTextPos, fontFace, fontScale, cv::Scalar(255, 0, 0), thickness);
                 
                 // Display the image with keypoints
                 cv::imshow("Extracted keypoints", imWithKeypoints);
                 cv::waitKey(5); // Wait for 5ms to allow window to update
 
-                std::cout << "[DEBUG] frame=" << ni 
-                        << " | kps=" << result.keypoints.size()
-                        << " | FPS=" << std::fixed << std::setprecision(1) << currentFps
-                        << " | Dequeue=" << std::fixed << std::setprecision(1) << dequeueLatency << "ms"
-                        << " | Track=" << std::fixed << std::setprecision(1) << trackLatency << "ms"
-                        << std::endl;
             } 
+
+            if(std::getenv("DEBUG_FEAT") != nullptr) {
+                // Print the FPS, dequeue latency, and track latency
+                std::cout << "[DEBUG] frame=" << ni 
+                    << " | kps=" << result.keypoints.size()
+                    << " | FPS=" << std::fixed << std::setprecision(1) << currentFps
+                    << " | Dequeue=" << std::fixed << std::setprecision(1) << dequeueLatency << "ms"
+                    << " | Track=" << std::fixed << std::setprecision(1) << trackLatency << "ms"
+                    << std::endl;
+            }
 #endif
 
             // Track using the SLAM system
