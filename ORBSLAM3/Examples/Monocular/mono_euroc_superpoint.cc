@@ -3,7 +3,7 @@
  *
  * Real-time SuperPoint DPU feature extraction for SLAM with EuRoC dataset
  */
-
+#define DEBUG_PRINT
 #include <iostream>
 #include <algorithm>
 #include <fstream>
@@ -302,7 +302,7 @@ int main(int argc, char **argv)
             */
 
             // Debug visualization of keypoints
-// #define DEBUG_PRINT
+
 #ifdef DEBUG_PRINT
             if (std::getenv("DEBUG_KeypointVisualization"))
             {
