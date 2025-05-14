@@ -10,6 +10,8 @@
 #include <chrono>
 #include <thread>
 #include <filesystem>
+#include <deque>
+#include <iomanip>
 
 #include <opencv2/core/core.hpp>
 
@@ -189,8 +191,36 @@ int main(int argc, char **argv)
         int processedFrames = 0;
         ORB_SLAM3::ResultQueueItem result;
 
-        while (outputQueue.dequeue(result))
+        // For FPS calculation
+        std::deque<std::chrono::steady_clock::time_point> frameTimes;
+        const int fpsWindowSize = 30; // Calculate FPS over last 30 frames
+        double dequeueLatency = 0;
+        double trackLatency = 0;
+        double currentFps = 0;
+
+        while (true)
         {
+            // Measure dequeue latency
+            std::chrono::steady_clock::time_point dequeueStart = std::chrono::steady_clock::now();
+            bool success = outputQueue.dequeue(result);
+            std::chrono::steady_clock::time_point dequeueEnd = std::chrono::steady_clock::now();
+            dequeueLatency = std::chrono::duration_cast<std::chrono::duration<double>>(dequeueEnd - dequeueStart).count() * 1000.0;
+            
+            if (!success) break;
+            
+            // Update frame times for FPS calculation
+            frameTimes.push_back(dequeueEnd);
+            if (frameTimes.size() > fpsWindowSize) {
+                frameTimes.pop_front();
+            }
+            
+            // Calculate current FPS if we have enough frames
+            if (frameTimes.size() >= 2) {
+                double duration = std::chrono::duration_cast<std::chrono::duration<double>>(
+                    frameTimes.back() - frameTimes.front()).count();
+                currentFps = (frameTimes.size() - 1) / duration;
+            }
+
             int ni = result.index;
             double tframe = result.timestamp;
 
@@ -223,7 +253,8 @@ int main(int argc, char **argv)
                 result.keypoints = newKeypoints;
             }
             */
-            // Filter out keypoints that are outside the image boundaries
+            // Filter out keypoints that are outside the image boundaries - this is not needed for real-time inference
+            /*
             const int imgWidth = result.image.cols;
             const int imgHeight = result.image.rows;
             
@@ -259,6 +290,7 @@ int main(int argc, char **argv)
                 }
 #endif
             }
+            */
 
             // Debug visualization of keypoints
 #ifdef DEBUG_PRINT
@@ -268,40 +300,28 @@ int main(int argc, char **argv)
                 cv::Mat imWithKeypoints;
                 result.image.copyTo(imWithKeypoints);
                 
-                // Scale down keypoint sizes for visualization
-                std::vector<cv::KeyPoint> scaledKeypoints;
-                scaledKeypoints.reserve(result.keypoints.size());
-                
-                // Check if keypoints are within image dimensions
-                const int imgWidth = result.image.cols;
-                const int imgHeight = result.image.rows;
-                int i = 0;
-                for (const auto& kp : result.keypoints) {
-                    scaledKeypoints.push_back(kp);
-                    // Check if keypoint is within image boundaries
-                    if (!(kp.pt.x >= 0 && kp.pt.x < imgWidth && 
-                        kp.pt.y >= 0 && kp.pt.y < imgHeight)) {
-                        std::cout << "frame=" << ni << "  keypoint idx= " << i
-                                << "  kp.pt.x= " << kp.pt.x << "  kp.pt.y= " << kp.pt.y 
-                                << "  imgWidth= " << imgWidth << "  imgHeight= " << imgHeight << std::endl;
-                    }
-                    i++;
-                }
-                
-                for(auto& kp : scaledKeypoints) {
-                    kp.size = 5; // Set fixed size for all keypoints
-                }
-                
-                cv::drawKeypoints(result.image, scaledKeypoints, imWithKeypoints, 
+                cv::drawKeypoints(result.image, result.keypoints, imWithKeypoints, 
                                 cv::Scalar(0, 255, 0), 
                                 cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
                 
+                // Add performance metrics to the image
+                std::string fpsText = "FPS: " + std::to_string(static_cast<int>(currentFps + 0.5));
+                std::string dequeueText = "Dequeue: " + std::to_string(static_cast<int>(dequeueLatency + 0.5)) + " ms";
+                std::string trackText = "Track: " + std::to_string(static_cast<int>(trackLatency + 0.5)) + " ms";
+                
+                cv::putText(imWithKeypoints, fpsText, cv::Point(20, 30), cv::FONT_HERSHEY_SIMPLEX, 0.75, cv::Scalar(0, 0, 255), 2);
+                cv::putText(imWithKeypoints, dequeueText, cv::Point(20, 60), cv::FONT_HERSHEY_SIMPLEX, 0.75, cv::Scalar(0, 0, 255), 2);
+                cv::putText(imWithKeypoints, trackText, cv::Point(20, 90), cv::FONT_HERSHEY_SIMPLEX, 0.75, cv::Scalar(0, 0, 255), 2);
+                
                 // Display the image with keypoints
-                cv::imshow("SuperPoint Keypoints", imWithKeypoints);
+                cv::imshow("SuperPoint Keypoints - Frame " + std::to_string(ni) + " (" + std::to_string(result.keypoints.size()) + " kps)", imWithKeypoints);
                 cv::waitKey(5); // Wait for 5ms to allow window to update
 
-                std::cout << "[DEBUG] KeypointVisualization  frame=" << ni 
-                        << "  keypoints=" << result.keypoints.size() 
+                std::cout << "[DEBUG] frame=" << ni 
+                        << " | kps=" << result.keypoints.size()
+                        << " | FPS=" << std::fixed << std::setprecision(1) << currentFps
+                        << " | Dequeue=" << std::fixed << std::setprecision(1) << dequeueLatency << "ms"
+                        << " | Track=" << std::fixed << std::setprecision(1) << trackLatency << "ms"
                         << std::endl;
             } 
 #endif
@@ -310,8 +330,8 @@ int main(int argc, char **argv)
             SLAM.TrackMonocular(result);
 
             std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
-            double ttrack = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count();
-            vTimesTrack[ni] = ttrack;
+            trackLatency = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count() * 1000.0;
+            vTimesTrack[ni] = trackLatency / 1000.0; // Store in seconds for consistency with existing code
 
             processedFrames++;
 
