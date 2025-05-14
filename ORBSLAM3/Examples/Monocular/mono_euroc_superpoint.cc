@@ -314,7 +314,7 @@ int main(int argc, char **argv)
                 cv::putText(imWithKeypoints, trackText, cv::Point(20, 90), cv::FONT_HERSHEY_SIMPLEX, 0.75, cv::Scalar(0, 0, 255), 2);
                 
                 // Display the image with keypoints
-                cv::imshow("SuperPoint Keypoints - Frame " + std::to_string(ni) + " (" + std::to_string(result.keypoints.size()) + " kps)", imWithKeypoints);
+                cv::imshow("Extracted keypoints", imWithKeypoints);
                 cv::waitKey(5); // Wait for 5ms to allow window to update
 
                 std::cout << "[DEBUG] frame=" << ni 
