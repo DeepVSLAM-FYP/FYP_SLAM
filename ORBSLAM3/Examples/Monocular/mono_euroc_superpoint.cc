@@ -14,13 +14,35 @@
 #include <iomanip>
 
 #include <opencv2/core/core.hpp>
+#include <opencv2/highgui.hpp>
 
 #include <System.h>
 #include "utils/ThreadSafeQueue.h"
 #include "utils/FeatureExtractorTypes.h"
 #include "PipelinedFE/PipelinedProcessFactory.h"
 
+// Include global atomic variables for thresholds (these are defined in SuperPointFast.cpp)
+extern std::atomic<float> g_conf_thresh;
+// Define the atomic variable for NMS distance threshold if it's not already defined elsewhere
+std::atomic<int> g_dist_thresh(2); // Default NMS threshold value
+
 using namespace std;
+
+// Trackbar variables
+int conf_thresh_trackbar = 15; // Range 0-100, maps to 0.0-0.03 (default 0.015 -> 50)
+int dist_thresh_trackbar = 2;  // Range 0-10 (default 2)
+
+// Callback functions for trackbars
+void on_conf_thresh_change(int pos, void*) {
+    float new_val = pos * 0.0003f; // Scale from 0-100 to 0.0-0.03
+    g_conf_thresh.store(new_val);
+    std::cout << "Confidence threshold set to: " << new_val << std::endl;
+}
+
+void on_dist_thresh_change(int pos, void*) {
+    g_dist_thresh.store(pos);
+    std::cout << "NMS distance threshold set to: " << pos << std::endl;
+}
 
 void LoadImages(const string &strImagePath, const string &strPathTimes,
                 vector<string> &vstrImages, vector<double> &vTimeStamps);
@@ -120,6 +142,23 @@ int main(int argc, char **argv)
     // Queue sizes
     const size_t INPUT_QUEUE_SIZE = 20;
     const size_t OUTPUT_QUEUE_SIZE = 50;
+
+    // Create a window for parameter adjustment with trackbars
+    cv::namedWindow("SuperPoint Parameters", cv::WINDOW_NORMAL);
+    
+    // Initialize trackbar values based on current atomic values
+    conf_thresh_trackbar = g_conf_thresh.load() / 0.0003f;  // Scale for UI (0.015 -> 50)
+    dist_thresh_trackbar = g_dist_thresh.load();
+    
+    // Create trackbars for parameter adjustments
+    cv::createTrackbar("Conf Thresh", "SuperPoint Parameters", 
+                     &conf_thresh_trackbar, 100, on_conf_thresh_change);
+    cv::createTrackbar("NMS Dist Thresh", "SuperPoint Parameters", 
+                     &dist_thresh_trackbar, 10, on_dist_thresh_change);
+                     
+    // Initialize trackbars with current values to trigger callbacks
+    on_conf_thresh_change(conf_thresh_trackbar, nullptr);
+    on_dist_thresh_change(dist_thresh_trackbar, nullptr);
 
     // Process each sequence
     for (seq = 0; seq < num_seq; seq++)
@@ -321,9 +360,15 @@ int main(int argc, char **argv)
                 std::string featuresText = "#Feat: " + std::to_string(result.keypoints.size());
                 std::string imageIdText = "ImID: " + std::to_string(ni);
                 
+                // Add threshold information
+                std::string confText = "Conf: " + std::to_string(g_conf_thresh.load()).substr(0, 6);
+                std::string nmsText = "NMS: " + std::to_string(g_dist_thresh.load());
+                
                 cv::putText(imWithKeypoints, fpsText, cv::Point(20, 30), cv::FONT_HERSHEY_SIMPLEX, 0.75, cv::Scalar(255, 0, 0), 2);
                 cv::putText(imWithKeypoints, dequeueText, cv::Point(20, 60), cv::FONT_HERSHEY_SIMPLEX, 0.75, cv::Scalar(255, 0, 0), 2);
                 cv::putText(imWithKeypoints, trackText, cv::Point(20, 90), cv::FONT_HERSHEY_SIMPLEX, 0.75, cv::Scalar(255, 0, 0), 2);
+                cv::putText(imWithKeypoints, confText, cv::Point(20, 120), cv::FONT_HERSHEY_SIMPLEX, 0.75, cv::Scalar(255, 0, 0), 2);
+                cv::putText(imWithKeypoints, nmsText, cv::Point(20, 150), cv::FONT_HERSHEY_SIMPLEX, 0.75, cv::Scalar(255, 0, 0), 2);
                 
                 // Position text in bottom right corner
                 int fontFace = cv::FONT_HERSHEY_SIMPLEX;
@@ -344,8 +389,35 @@ int main(int argc, char **argv)
                 
                 // Display the image with keypoints
                 cv::imshow("Extracted keypoints", imWithKeypoints);
-                cv::waitKey(1); // Wait for 5ms to allow window to update
-
+                
+                // Process key events - allow for parameter adjustments with keyboard too
+                int key = cv::waitKey(1);
+                if (key == 'q' || key == 27) { // 'q' or ESC key
+                    // Signal to shutdown
+                    std::cout << "User requested exit" << std::endl;
+                    outputQueue.shutdown();
+                    break;
+                }
+                else if (key == '+' || key == '=') {
+                    // Increase confidence threshold
+                    conf_thresh_trackbar = std::min(conf_thresh_trackbar + 1, 100);
+                    cv::setTrackbarPos("Conf Thresh", "SuperPoint Parameters", conf_thresh_trackbar);
+                }
+                else if (key == '-' || key == '_') {
+                    // Decrease confidence threshold
+                    conf_thresh_trackbar = std::max(conf_thresh_trackbar - 1, 0);
+                    cv::setTrackbarPos("Conf Thresh", "SuperPoint Parameters", conf_thresh_trackbar);
+                }
+                else if (key == ']' || key == '}') {
+                    // Increase NMS threshold
+                    dist_thresh_trackbar = std::min(dist_thresh_trackbar + 1, 10);
+                    cv::setTrackbarPos("NMS Dist Thresh", "SuperPoint Parameters", dist_thresh_trackbar);
+                }
+                else if (key == '[' || key == '{') {
+                    // Decrease NMS threshold
+                    dist_thresh_trackbar = std::max(dist_thresh_trackbar - 1, 0);
+                    cv::setTrackbarPos("NMS Dist Thresh", "SuperPoint Parameters", dist_thresh_trackbar);
+                }
             } 
 
             if(std::getenv("DEBUG_FEAT") != nullptr) {
@@ -355,6 +427,8 @@ int main(int argc, char **argv)
                     << " | FPS=" << std::fixed << std::setprecision(1) << currentFps
                     << " | Dequeue=" << std::fixed << std::setprecision(1) << dequeueLatency << "ms"
                     << " | Track=" << std::fixed << std::setprecision(1) << trackLatency << "ms"
+                    << " | Conf=" << std::fixed << std::setprecision(3) << g_conf_thresh.load()
+                    << " | NMS=" << g_dist_thresh.load()
                     << std::endl;
             }
 #endif
@@ -432,6 +506,9 @@ int main(int argc, char **argv)
         SLAM.SaveTrajectoryEuRoC("CameraTrajectory.txt");
         SLAM.SaveKeyFrameTrajectoryEuRoC("KeyFrameTrajectory.txt");
     }
+
+    // Destroy windows upon exit
+    cv::destroyAllWindows();
 
     return 0;
 }

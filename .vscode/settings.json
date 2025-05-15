@@ -85,6 +85,8 @@
         "source_location": "cpp",
         "span": "cpp",
         "core": "cpp",
-        "multi_span": "cpp"
+        "multi_span": "cpp",
+        "compare": "cpp",
+        "stop_token": "cpp"
     }
 }
