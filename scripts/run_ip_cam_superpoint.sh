@@ -7,7 +7,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 # Default parameters
-MODEL_PATH="$PROJECT_ROOT/Thirdparty/super_point_vitis/compiled_SP_by_H.xmodel"
+MODEL_PATH="$PROJECT_ROOT/Thirdparty/super_point_vitis/superpoint_tf.xmodel"
 IP_ADDRESS="192.168.1.145"  # Default IP address
 PORT=8080                   # Default port (changed from 8554 to 8080)
 FPS=10                      # Default target FPS
