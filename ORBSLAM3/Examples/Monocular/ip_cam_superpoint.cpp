@@ -28,16 +28,17 @@ using namespace cv;
 std::atomic<float> current_fps(0.0f);
 std::atomic<int> frame_count(0);
 std::atomic<int> keypoints_count(0);
-std::atomic<int> g_target_fps(10); // Add global atomic for target_fps
 
 // Extern declaration for the global atomic variables
 extern std::atomic<float> g_conf_thresh;
 extern std::atomic<int> g_dist_thresh;
+// Global atomic variable for target FPS
+std::atomic<int> g_target_fps(10);
 
 // Trackbar variables (scaled for better usability)
 int conf_thresh_trackbar = 5; // Range 0-100, maps to 0.0-0.03
 int dist_thresh_trackbar = 2;  // Range 0-10
-int target_fps_trackbar = 10;  // Range 1-30, default 10
+int target_fps_trackbar = 10;  // Range 1-60
 
 // Callback functions for trackbars
 void on_conf_thresh_change(int pos, void *)
@@ -55,8 +56,6 @@ void on_dist_thresh_change(int pos, void *)
 
 void on_target_fps_change(int pos, void *)
 {
-  // Ensure minimum of 1 FPS
-  if (pos < 1) pos = 1;
   g_target_fps.store(pos);
   std::cout << "Target FPS set to: " << pos << std::endl;
 }
@@ -148,6 +147,7 @@ int main(int argc, char *argv[])
     ip_address = argv[arg_index + 3];
     port = std::stoi(argv[arg_index + 4]);
     target_fps = std::stoi(argv[arg_index + 5]);
+    g_target_fps.store(target_fps); // Initialize the atomic variable
     protocol = argv[arg_index + 6];
 
     // Check if camera_fps is provided as an argument
@@ -238,7 +238,7 @@ int main(int argc, char *argv[])
     cv::createTrackbar("NMS Dist Thresh", "ORB-SLAM3 with SuperPoint",
                        &dist_thresh_trackbar, 10, on_dist_thresh_change);
     cv::createTrackbar("Target FPS", "ORB-SLAM3 with SuperPoint",
-                       &target_fps_trackbar, 30, on_target_fps_change);
+                       &target_fps_trackbar, 60, on_target_fps_change);
 
     // Initialize trackbars with current values to trigger callbacks
     on_conf_thresh_change(conf_thresh_trackbar, nullptr);
@@ -259,7 +259,7 @@ int main(int argc, char *argv[])
     std::cout << "Connecting to stream: " << stream_url << std::endl;
 
     // Start producer thread to capture frames from IP camera
-    std::thread producer_thread([stream_url, &inputQueue, target_fps, protocol, camera_fps, imageScale, SLAM]()
+    std::thread producer_thread([stream_url, &inputQueue, camera_fps, imageScale, SLAM]()
                                 {
       // Open video stream
       cv::VideoCapture cap(stream_url);
@@ -277,17 +277,21 @@ int main(int argc, char *argv[])
       size_t frames_dropped = 0;
       size_t total_frames_received = 0; // Count of all frames from camera, including flushed and dropped
       auto last_frame_time = std::chrono::high_resolution_clock::now();
-      int flush_fps = camera_fps - target_fps;
+      int target_fps, flush_fps;
       float flush_ratio;
-
-      if (flush_fps > 0) {
-        flush_ratio = (float)flush_fps / (float)camera_fps;
-      } else {
-        flush_ratio = 0.0;
-      }
       float flush_counter = 0.0;
       
       while (true) {
+        // Get current target_fps from atomic variable
+        target_fps = g_target_fps.load();
+        flush_fps = camera_fps - target_fps;
+        
+        if (flush_fps > 0) {
+          flush_ratio = (float)flush_fps / (float)camera_fps;
+        } else {
+          flush_ratio = 0.0;
+        }
+        
         // Calculate time since last frame
         auto now = std::chrono::high_resolution_clock::now();
         auto frame_duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_frame_time);
@@ -378,7 +382,7 @@ int main(int argc, char *argv[])
 
     // For enforcing target FPS in the consumer thread
     auto last_process_time = std::chrono::high_resolution_clock::now();
-    int frame_time_ms = 1000 / target_fps;
+    int frame_time_ms = 1000 / g_target_fps.load();
     int wait_time = 0;
 
     std::chrono::steady_clock::time_point dequeueStart = std::chrono::steady_clock::now();
@@ -387,6 +391,11 @@ int main(int argc, char *argv[])
     {
       std::chrono::steady_clock::time_point dequeueEnd = std::chrono::steady_clock::now();
       dequeueLatency = std::chrono::duration_cast<std::chrono::duration<double>>(dequeueEnd - dequeueStart).count() * 1000.0;
+      
+      // Get latest target FPS
+      int current_target_fps = g_target_fps.load();
+      frame_time_ms = 1000 / current_target_fps;
+      
       // Calculate time since last frame processing
       auto now = std::chrono::high_resolution_clock::now();
       auto frame_duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_process_time);
