@@ -55,8 +55,8 @@ echo "Syncing SuperPoint libs..."
 rsync $RSYNC_OPTS -e "$SSH_OPTS" --delete "$REMOTE_TARGET_1/$SUPERPOINT_LIBS/" "$SUPERPOINT_LIBS/"
 
 # Sync Vocabulary folder
-echo "Syncing Vocabulary folder..."
-rsync $RSYNC_OPTS -e "$SSH_OPTS" "$REMOTE_TARGET_2/$VOCABULARY_PATH/" "$VOCABULARY_PATH/"
+# echo "Syncing Vocabulary folder..."
+# rsync $RSYNC_OPTS -e "$SSH_OPTS" "$REMOTE_TARGET_2/$VOCABULARY_PATH/" "$VOCABULARY_PATH/"
 
 
 

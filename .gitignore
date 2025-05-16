@@ -95,3 +95,4 @@ Vocabulary/*
 _results/
 temp
 debug_output/
+send_to_remote.sh
