@@ -13,7 +13,7 @@ set(PROJECT_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 option(DEBUG_PRINT "Enable debug print" ON)
 option(O3_DEBUG "Enable O3 optimization on debug" ON)
 option(USE_TOOLCHAIN "Use toolchain" OFF)
-option(BUILD_SP_DPU "Build SuperPoint DPU libs and examples" OFF)
+option(BUILD_SP_DPU "Build SuperPoint DPU libs and examples" ON)
 
 if(USE_TOOLCHAIN)
     set(CMAKE_TOOLCHAIN_FILE "${PROJECT_ROOT_DIR}/toolchain-kr260.cmake")
