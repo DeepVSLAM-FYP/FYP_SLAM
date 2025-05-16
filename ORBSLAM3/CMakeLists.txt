@@ -63,13 +63,14 @@ include_directories(
         ${PROJECT_ROOT_DIR}/Thirdparty/FBOW/include
         ${EIGEN3_INCLUDE_DIR}
         ${Pangolin_INCLUDE_DIRS}
+        ${PROJECT_ROOT_DIR}/Thirdparty/super_point_vitis/include
 )
 
 # Add SuperPoint include directories if enabled
 if(BUILD_SP_DPU)
-    include_directories(
-        ${PROJECT_ROOT_DIR}/Thirdparty/super_point_vitis/include
-    )
+    # include_directories(
+    #     ${PROJECT_ROOT_DIR}/Thirdparty/super_point_vitis/include
+    # )
     # Define a macro to enable conditional compilation
     add_definitions(-DBUILD_SP_DPU)
 endif()
