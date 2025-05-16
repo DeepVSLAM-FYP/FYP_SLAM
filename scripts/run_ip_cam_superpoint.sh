@@ -134,7 +134,7 @@ fi
 "$PROJECT_ROOT/Examples/ORB/ip_cam_superpoint" \
     -t "$NUM_THREADS" \
     -o "$OUTPUT_DIR" \
-    "$PROJECT_ROOT/Vocabulary/dpu_bovisa_sp_h.fbow" \
+    "$PROJECT_ROOT/Vocabulary/dpu_dummy.fbow" \
     "$PROJECT_ROOT/ORBSLAM3/Examples/Monocular/EuRoC_Dummy.yaml" \
     "$MODEL_PATH" \
     "$IP_ADDRESS" \

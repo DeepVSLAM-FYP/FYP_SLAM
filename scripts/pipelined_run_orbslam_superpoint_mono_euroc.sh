@@ -38,7 +38,7 @@ fi
 
 # Execute the pipelined SuperPoint ORB-SLAM3 with EuRoC dataset
 "$PROJECT_ROOT/Examples/ORB/mono_euroc_superpoint" \
-    "$PROJECT_ROOT/Vocabulary/dpu_bovisa_sp_h.fbow" \
+    "$PROJECT_ROOT/Vocabulary/dpu_dummy.fbow" \
     "$PROJECT_ROOT/ORBSLAM3/Examples/Monocular/EuRoC_Dummy.yaml" \
     "$PROJECT_ROOT/datasets/${DATASET}" \
     "$PROJECT_ROOT/ORBSLAM3/Examples/Monocular/EuRoC_TimeStamps/${DATASET}.txt" \
