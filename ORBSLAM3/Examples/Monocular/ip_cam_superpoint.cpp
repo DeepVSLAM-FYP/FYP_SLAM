@@ -28,6 +28,7 @@ using namespace cv;
 std::atomic<float> current_fps(0.0f);
 std::atomic<int> frame_count(0);
 std::atomic<int> keypoints_count(0);
+std::atomic<int> g_target_fps(10); // Add global atomic for target_fps
 
 // Extern declaration for the global atomic variables
 extern std::atomic<float> g_conf_thresh;
@@ -36,6 +37,7 @@ extern std::atomic<int> g_dist_thresh;
 // Trackbar variables (scaled for better usability)
 int conf_thresh_trackbar = 5; // Range 0-100, maps to 0.0-0.03
 int dist_thresh_trackbar = 2;  // Range 0-10
+int target_fps_trackbar = 10;  // Range 1-30, default 10
 
 // Callback functions for trackbars
 void on_conf_thresh_change(int pos, void *)
@@ -49,6 +51,14 @@ void on_dist_thresh_change(int pos, void *)
 {
   g_dist_thresh.store(pos);
   std::cout << "NMS distance threshold set to: " << pos << std::endl;
+}
+
+void on_target_fps_change(int pos, void *)
+{
+  // Ensure minimum of 1 FPS
+  if (pos < 1) pos = 1;
+  g_target_fps.store(pos);
+  std::cout << "Target FPS set to: " << pos << std::endl;
 }
 
 void print_usage(char *prog_name)
@@ -220,16 +230,20 @@ int main(int argc, char *argv[])
     // Initialize trackbar values based on current atomic values
     conf_thresh_trackbar = g_conf_thresh.load() / 0.0003f; // Scale for UI
     dist_thresh_trackbar = g_dist_thresh.load();
+    target_fps_trackbar = g_target_fps.load();
 
     // Create trackbars for parameter adjustments
     cv::createTrackbar("Conf Thresh", "ORB-SLAM3 with SuperPoint",
                        &conf_thresh_trackbar, 100, on_conf_thresh_change);
     cv::createTrackbar("NMS Dist Thresh", "ORB-SLAM3 with SuperPoint",
                        &dist_thresh_trackbar, 10, on_dist_thresh_change);
+    cv::createTrackbar("Target FPS", "ORB-SLAM3 with SuperPoint",
+                       &target_fps_trackbar, 30, on_target_fps_change);
 
     // Initialize trackbars with current values to trigger callbacks
     on_conf_thresh_change(conf_thresh_trackbar, nullptr);
     on_dist_thresh_change(dist_thresh_trackbar, nullptr);
+    on_target_fps_change(target_fps_trackbar, nullptr);
 
     // URL for video stream based on protocol
     std::string stream_url = protocol + "://" + ip_address + ":" + std::to_string(port);
