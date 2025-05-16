@@ -25,10 +25,10 @@ Camera1.fy: 433.473
 Camera1.cx: 320.0
 Camera1.cy: 240.0
 
-Camera1.k1: 0
-Camera1.k2: 0
-Camera1.p1: 0
-Camera1.p2: 0
+Camera1.k1: 0.0
+Camera1.k2: 0.0
+Camera1.p1: 0.0
+Camera1.p2: 0.0
 
 Camera.width: 640
 Camera.height: 480
