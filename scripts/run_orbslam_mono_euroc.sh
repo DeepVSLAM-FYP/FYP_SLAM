@@ -7,8 +7,11 @@
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
+
+source "$SCRIPT_DIR/debug.sh"
+
 # Set dataset variable - replace MH01,V101 with desired sequence if needed
-DATASET=${1:-"MH01"}  # Use first argument or default to MH01
+DATASET=${1:-"V101"}  # Use first argument or default to MH01
 
 # Execute the monocular ORB-SLAM3 with EuRoC dataset
 export DEBUG_SLAM=1
