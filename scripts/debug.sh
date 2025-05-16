@@ -33,7 +33,7 @@ unset DEBUG_MonocularInitializationShowMatchedCoords
 unset USE_ORB
 
 # Change here - uncomment the debug flags you want to set
-export DEBUG_FEAT=1
+# export DEBUG_FEAT=1
 # export DEBUG_SLAM=1
 # export SKIP_SLAM=1  # Set this to skip SLAM initialization and processing (for feature extraction only)
 
@@ -57,9 +57,9 @@ export DEBUG_KeypointVisualization=1    # Debug visualization of keypoints
 # --- Main tracking process ---
 # export DEBUG_TrackT=1                              # Debug information at the end of Track()
 # export DEBUG_TrackWithMM=1                         # Debug tracking with motion model
-export DEBUG_TrackLM=1                             # Debug tracking of local map points
-export DEBUG_NeedNewKeyFrameT=1                    # Debug whether a new keyframe is needed
-export DEBUG_CreateNewKeyFrameT=1                  # Debug keyframe creation
+# export DEBUG_TrackLM=1                             # Debug tracking of local map points
+# export DEBUG_NeedNewKeyFrameT=1                    # Debug whether a new keyframe is needed
+# export DEBUG_CreateNewKeyFrameT=1                  # Debug keyframe creation
 # export DEBUG_SearchLocalPointsT=1                  # Debug local point searching process
 # export DEBUG_TrackLocalMap=1                       # Debug tracking of local map points
 # export DEBUG_UpdateLocalMapT=1                     # Debug local map updating process

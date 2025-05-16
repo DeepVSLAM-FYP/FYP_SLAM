@@ -34,7 +34,7 @@ extern std::atomic<float> g_conf_thresh;
 extern std::atomic<int> g_dist_thresh;
 
 // Trackbar variables (scaled for better usability)
-int conf_thresh_trackbar = 10; // Range 0-100, maps to 0.0-0.03
+int conf_thresh_trackbar = 5; // Range 0-100, maps to 0.0-0.03
 int dist_thresh_trackbar = 2;  // Range 0-10
 
 // Callback functions for trackbars
@@ -365,6 +365,7 @@ int main(int argc, char *argv[])
     // For enforcing target FPS in the consumer thread
     auto last_process_time = std::chrono::high_resolution_clock::now();
     int frame_time_ms = 1000 / target_fps;
+    int wait_time = 0;
 
     std::chrono::steady_clock::time_point dequeueStart = std::chrono::steady_clock::now();
 
@@ -379,8 +380,11 @@ int main(int argc, char *argv[])
       // Enforce target FPS by waiting if needed
       if (frame_duration.count() < frame_time_ms)
       {
-        std::this_thread::sleep_for(std::chrono::milliseconds(frame_time_ms - frame_duration.count()));
+        wait_time = frame_time_ms - frame_duration.count();
+        std::this_thread::sleep_for(std::chrono::milliseconds(wait_time));
         now = std::chrono::high_resolution_clock::now();
+      }else{
+        wait_time = 0;
       }
 
       last_process_time = now;
@@ -488,8 +492,7 @@ int main(int argc, char *argv[])
                   << " | FPS=" << std::fixed << std::setprecision(1) << currentFps
                   << " | Dequeue=" << std::fixed << std::setprecision(1) << dequeueLatency << "ms"
                   << " | Track=" << std::fixed << std::setprecision(1) << trackLatency << "ms"
-                  << " | Conf=" << std::fixed << std::setprecision(3) << g_conf_thresh.load()
-                  << " | NMS=" << g_dist_thresh.load()
+                  << " | Wait=" << std::fixed << std::setprecision(1) << wait_time << "ms"
                   << std::endl;
       }
 #endif
