@@ -135,7 +135,7 @@ fi
     -t "$NUM_THREADS" \
     -o "$OUTPUT_DIR" \
     "$PROJECT_ROOT/Vocabulary/dpu_dummy.fbow" \
-    "$PROJECT_ROOT/ORBSLAM3/Examples/Monocular/EuRoC_Dummy.yaml" \
+    "$PROJECT_ROOT/ORBSLAM3/Examples/Monocular/IP.yaml" \
     "$MODEL_PATH" \
     "$IP_ADDRESS" \
     "$PORT" \
