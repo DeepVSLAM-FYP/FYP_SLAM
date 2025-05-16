@@ -2307,7 +2307,6 @@ namespace ORB_SLAM3
         if (a.type() == CV_8U)
         { // ORB
             dist = cv::norm(a, b, cv::NORM_HAMMING);
-            dist += 0.1; // to debug floating point support for matcher
             // const int *pa = a.ptr<int32_t>();
             // const int *pb = b.ptr<int32_t>();
 
