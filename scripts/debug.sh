@@ -33,7 +33,7 @@ unset DEBUG_MonocularInitializationShowMatchedCoords
 unset USE_ORB
 
 # Change here - uncomment the debug flags you want to set
-# export DEBUG_FEAT=1
+export DEBUG_FEAT=1
 # export DEBUG_SLAM=1
 # export SKIP_SLAM=1  # Set this to skip SLAM initialization and processing (for feature extraction only)
 
