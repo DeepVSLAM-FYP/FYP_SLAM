@@ -1408,7 +1408,8 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
             return;
 
     optimizer.initializeOptimization();
-    optimizer.optimize(10);
+    //changed from 10 to 8
+    optimizer.optimize(8);
 
     vector<pair<KeyFrame*,MapPoint*> > vToErase;
     vToErase.reserve(vpEdgesMono.size()+vpEdgesBody.size()+vpEdgesStereo.size());

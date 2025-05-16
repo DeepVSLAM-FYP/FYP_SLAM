@@ -11,8 +11,8 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 DATASET=${1:-"MH01"}  # Use first argument or default to MH01
 
 # Set feature directory - where to load features from
-FEATURE_DIR=${2:-"$PROJECT_ROOT/datasets/feature_outputs/SP_TF/V101"}  # Default to SP_H directory
-# FEATURE_DIR=${2:-"$PROJECT_ROOT/datasets/feature_outputs/SP_H"}  # Default to SP_TF directory
+# FEATURE_DIR=${2:-"$PROJECT_ROOT/datasets/feature_outputs/V101/V101"}  # Default to v101 directory
+FEATURE_DIR=${2:-"$PROJECT_ROOT/datasets/feature_outputs/SP_TF"}  # Default to MH01 directory
 # Print paths for debugging
 echo "Running from script directory: $SCRIPT_DIR"
 echo "Project root: $PROJECT_ROOT"
@@ -24,6 +24,10 @@ export DEBUG_SLAM=1
 
 # source debug.sh
 source "$SCRIPT_DIR/debug.sh"
+
+# Create output directories if they don't exist
+mkdir -p "$PROJECT_ROOT/Trajectories/ORB_Dummy/${DATASET}/"
+mkdir -p "$PROJECT_ROOT/debug_output"
 
 # Execute the pipelined dummy ORB-SLAM3 with EuRoC dataset
 "$PROJECT_ROOT/Examples/ORB/mono_euroc_pipelined_dummy" \

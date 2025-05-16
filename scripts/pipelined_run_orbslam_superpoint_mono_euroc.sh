@@ -17,6 +17,10 @@ MODEL_PATH=${2:-"$PROJECT_ROOT/Thirdparty/super_point_vitis/compiled_SP_by_H.xmo
 # Set number of threads (default 4)
 NUM_THREADS=${3:-4}
 
+# Create output directories if they don't exist
+mkdir -p "$PROJECT_ROOT/Trajectories/ORB_SuperPoint/${DATASET}/"
+mkdir -p "$PROJECT_ROOT/debug_output"
+
 # Print paths for debugging
 echo "Running from script directory: $SCRIPT_DIR"
 echo "Project root: $PROJECT_ROOT"

@@ -3312,7 +3312,7 @@ bool Tracking::TrackReferenceKeyFrame()
 
     // We perform first an ORB matching with the reference keyframe
     // If enough matches are found we setup a PnP solver
-    ORBmatcher matcher(0.7, GlobalFeatureExtractorInfo::GetFeatureExtractorType() == "ORB" || GlobalFeatureExtractorInfo::GetFeatureExtractorType() == "SIFT" );
+    ORBmatcher matcher(0.75, GlobalFeatureExtractorInfo::GetFeatureExtractorType() == "ORB" || GlobalFeatureExtractorInfo::GetFeatureExtractorType() == "SIFT" );
     vector<MapPoint*> vpMapPointMatches;
 
     int nmatches = matcher.SearchByBoW(mpReferenceKF,mCurrentFrame,vpMapPointMatches);
@@ -3488,6 +3488,8 @@ bool Tracking::TrackWithMotionModel()
     else
         th = 15;
 
+    //changed here
+    th = th * 2;
 
     int nmatches = matcher.SearchByProjection(mCurrentFrame, mLastFrame, th, mSensor == System::MONOCULAR || mSensor == System::IMU_MONOCULAR);
 #ifdef DEBUG_PRINT
@@ -3518,7 +3520,8 @@ bool Tracking::TrackWithMotionModel()
             Verbose::PrintMess("Matches with wider search: " + to_string(nmatches), Verbose::VERBOSITY_NORMAL);
         }
 
-        if (nmatches < 20)
+        //changed here
+        if (nmatches < 10)
         {
 #ifdef DEBUG_PRINT
             if(std::getenv("DEBUG_TrackWithMM") != nullptr)
@@ -3602,7 +3605,8 @@ bool Tracking::TrackWithMotionModel()
                 std::cout << "[DEBUG][TrackWithMM] Frame ID: " << mCurrentFrame.mnId << "  Monocular Tracking: " << ((nmatchesMap >= 10) ? "SUCCESS" : "FAILED") << std::endl;
             }
 #endif
-            return nmatchesMap >= 10;
+            //changed here
+            return nmatchesMap >= 5;
         }
 }
 
@@ -3811,7 +3815,7 @@ bool Tracking::TrackWithMotionModel()
         }
         else
         {
-            if (mnMatchesInliers < 30)
+            if (mnMatchesInliers < 10)
             {
 #ifdef DEBUG_PRINT
                 if(std::getenv("DEBUG_TrackLM") != nullptr)
@@ -3922,8 +3926,9 @@ bool Tracking::TrackWithMotionModel()
         */
 
         // For monocular, use a higher threshold (insert keyframes more frequently)
+        //changed here
         if (mSensor == System::MONOCULAR)
-            thRefRatio = (GlobalFeatureExtractorInfo::GetFeatureExtractorType() == "DUMMY") ? 0.95f : 0.9f;
+            thRefRatio = 0.95f;
 
         if (mpCamera2)
             thRefRatio = 0.75f;
@@ -3944,7 +3949,19 @@ bool Tracking::TrackWithMotionModel()
         // Step 6.3: Condition 1c - Tracking is weak (for stereo/RGBD)
         const bool c1c = mSensor != System::MONOCULAR && mSensor != System::IMU_MONOCULAR && mSensor != System::IMU_STEREO && mSensor != System::IMU_RGBD && (mnMatchesInliers < nRefMatches * 0.25 || bNeedToInsertClose);
         // Step 6.4: Condition 2 - Few tracked points compared to reference keyframe, but not too few
-        const bool c2 = (((mnMatchesInliers < nRefMatches * thRefRatio || bNeedToInsertClose)) && mnMatchesInliers > 15);
+        const bool c2_part1 = mnMatchesInliers < nRefMatches * thRefRatio;
+        const bool c2_part2 = mnMatchesInliers > 10;
+        const bool c2 = ((c2_part1 || bNeedToInsertClose) && c2_part2);
+#ifdef DEBUG_PRINT
+        if(std::getenv("DEBUG_NeedNewKeyFrameT") != nullptr)
+        {
+            std::cout << "[DEBUG][NeedNewKeyFrame_c2] c2_part1=" << std::boolalpha << c2_part1 
+                      << "  c2_part2=" << c2_part2
+                      << "  bNeedToInsertClose=" << bNeedToInsertClose
+                      << "  (mnMatchesInliers=" << mnMatchesInliers 
+                      << " vs threshold=" << nRefMatches * thRefRatio << ")" << std::noboolalpha << std::endl;
+        }
+#endif
 
         // Step 6.5: Temporal condition for inertial cases (IMU): if enough time has passed since last keyframe
         bool c3 = false;
@@ -4002,9 +4019,16 @@ bool Tracking::TrackWithMotionModel()
                         if (std::getenv("DEBUG_NeedNewKeyFrameT") != nullptr)
                         {
                             std::cout << "[DEBUG][NeedNewKeyFrame] nMatchesInliers=" << mnMatchesInliers
-                                      << "  nRefMatches=" << mpReferenceKF->TrackedMapPoints(3) << '\n'
+                                      << "  nRefMatches=" << nRefMatches
+                                      << "  thRefRatio=" << thRefRatio 
+                                      << "  minInliers=" << 10 << '\n'
+                                      << "  c1a=" << std::boolalpha << c1a 
+                                      << "  c1b=" << c1b
+                                      << "  c1c=" << c1c
+                                      << "  c2=" << c2 << '\n'
                                       << "  lastKFId=" << mnLastKeyFrameId
                                       << "  curFrameId=" << mCurrentFrame.mnId
+                                      << "  mState=" << mState
                                       << "  decision=" << std::boolalpha << ((c1a || c1b || c1c) && c2)
                                       << std::noboolalpha << '\n';
                         }
@@ -4017,9 +4041,16 @@ bool Tracking::TrackWithMotionModel()
                         if (std::getenv("DEBUG_NeedNewKeyFrameT") != nullptr)
                         {
                             std::cout << "[DEBUG][NeedNewKeyFrame] nMatchesInliers=" << mnMatchesInliers
-                                      << "  nRefMatches=" << mpReferenceKF->TrackedMapPoints(3) << '\n'
+                                      << "  nRefMatches=" << nRefMatches
+                                      << "  thRefRatio=" << thRefRatio 
+                                      << "  minInliers=" << 10 << '\n'
+                                      << "  c1a=" << std::boolalpha << c1a 
+                                      << "  c1b=" << c1b
+                                      << "  c1c=" << c1c
+                                      << "  c2=" << c2 << '\n'
                                       << "  lastKFId=" << mnLastKeyFrameId
                                       << "  curFrameId=" << mCurrentFrame.mnId
+                                      << "  mState=" << mState
                                       << "  decision=" << std::boolalpha << ((c1a || c1b || c1c) && c2)
                                       << std::noboolalpha << '\n';
                         }
@@ -4034,9 +4065,16 @@ bool Tracking::TrackWithMotionModel()
                     if (std::getenv("DEBUG_NeedNewKeyFrameT") != nullptr)
                     {
                         std::cout << "[DEBUG][NeedNewKeyFrame] nMatchesInliers=" << mnMatchesInliers
-                                  << "  nRefMatches=" << mpReferenceKF->TrackedMapPoints(3) << '\n'
+                                  << "  nRefMatches=" << nRefMatches
+                                  << "  thRefRatio=" << thRefRatio 
+                                  << "  minInliers=" << 10 << '\n'
+                                  << "  c1a=" << std::boolalpha << c1a 
+                                  << "  c1b=" << c1b
+                                  << "  c1c=" << c1c
+                                  << "  c2=" << c2 << '\n'
                                   << "  lastKFId=" << mnLastKeyFrameId
                                   << "  curFrameId=" << mCurrentFrame.mnId
+                                  << "  mState=" << mState
                                   << "  decision=" << std::boolalpha << ((c1a || c1b || c1c) && c2)
                                   << std::noboolalpha << '\n';
                     }
@@ -4052,9 +4090,16 @@ bool Tracking::TrackWithMotionModel()
             if (std::getenv("DEBUG_NeedNewKeyFrameT") != nullptr)
             {
                 std::cout << "[DEBUG][NeedNewKeyFrame] nMatchesInliers=" << mnMatchesInliers
-                          << "  nRefMatches=" << mpReferenceKF->TrackedMapPoints(3) << '\n'
+                          << "  nRefMatches=" << nRefMatches 
+                          << "  thRefRatio=" << thRefRatio
+                          << "  minInliers=" << 10 << '\n'
+                          << "  c1a=" << std::boolalpha << c1a 
+                          << "  c1b=" << c1b 
+                          << "  c1c=" << c1c
+                          << "  c2=" << c2 << '\n'
                           << "  lastKFId=" << mnLastKeyFrameId
                           << "  curFrameId=" << mCurrentFrame.mnId
+                          << "  mState=" << mState
                           << "  decision=" << std::boolalpha << ((c1a || c1b || c1c) && c2)
                           << std::noboolalpha << '\n';
             }
@@ -4065,9 +4110,16 @@ bool Tracking::TrackWithMotionModel()
         if (std::getenv("DEBUG_NeedNewKeyFrameT") != nullptr)
         {
             std::cout << "[DEBUG][NeedNewKeyFrame] nMatchesInliers=" << mnMatchesInliers
-                      << "  nRefMatches=" << mpReferenceKF->TrackedMapPoints(3) << '\n'
+                      << "  nRefMatches=" << nRefMatches
+                      << "  thRefRatio=" << thRefRatio 
+                      << "  minInliers=" << 10 << '\n'
+                      << "  c1a=" << std::boolalpha << c1a 
+                      << "  c1b=" << c1b
+                      << "  c1c=" << c1c
+                      << "  c2=" << c2 << '\n'
                       << "  lastKFId=" << mnLastKeyFrameId
                       << "  curFrameId=" << mCurrentFrame.mnId
+                      << "  mState=" << mState
                       << "  decision=" << std::boolalpha << ((c1a || c1b || c1c) && c2)
                       << std::noboolalpha << '\n';
         }

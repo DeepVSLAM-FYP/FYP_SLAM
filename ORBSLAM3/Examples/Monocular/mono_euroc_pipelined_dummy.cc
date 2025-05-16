@@ -290,6 +290,8 @@ int main(int argc, char **argv)
             } 
 #endif
             // Track using the SLAM system
+            //changed here
+            std::this_thread::sleep_for(std::chrono::milliseconds(30));
             SLAM.TrackMonocular(result);
 
             std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
