@@ -8,10 +8,10 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 # Default parameters
 MODEL_PATH="$PROJECT_ROOT/Thirdparty/super_point_vitis/compiled_SP_by_H.xmodel"
-IP_ADDRESS="10.10.10.62"  # Default IP address
+IP_ADDRESS="192.168.8.166"  # Default IP address
 PORT=8080                   # Default port (changed from 8554 to 8080)
-FPS=20                     # Default target FPS
-CAMERA_FPS=20               # Default camera FPS
+FPS=15                     # Default target FPS
+CAMERA_FPS=15               # Default camera FPS
 PROTOCOL="rtsp"             # Default protocol
 NUM_THREADS=3               # Default number of threads (changed from 4 to 2 to match cpp default)
 OUTPUT_DIR="$PROJECT_ROOT/Trajectories/ORB_SuperPoint_IP/"
