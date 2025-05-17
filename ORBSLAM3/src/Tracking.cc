@@ -3489,7 +3489,7 @@ bool Tracking::TrackWithMotionModel()
         th = 15;
 
     //changed here
-    th = th * 2;
+    // th = th * 2;
 
     int nmatches = matcher.SearchByProjection(mCurrentFrame, mLastFrame, th, mSensor == System::MONOCULAR || mSensor == System::IMU_MONOCULAR);
 #ifdef DEBUG_PRINT
