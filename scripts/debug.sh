@@ -38,7 +38,7 @@ export DEBUG_FEAT=1
 # export SKIP_SLAM=1  # Set this to skip SLAM initialization and processing (for feature extraction only)
 
 # mono_euroc_pipelined_dummy.cc
-export DEBUG_KeypointVisualization=1    # Debug visualization of keypoints  
+# export DEBUG_KeypointVisualization=1    # Debug visualization of keypoints  
 
 # ORBMatcher.cc
 # export DEBUG_SearchByProjection=1
