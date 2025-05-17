@@ -23,7 +23,7 @@
 
 using namespace std;
 using namespace cv;
-
+//a
 // Atomic variables for FPS calculation
 std::atomic<float> current_fps(0.0f);
 std::atomic<int> frame_count(0);
