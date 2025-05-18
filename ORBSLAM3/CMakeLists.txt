@@ -225,6 +225,10 @@ if(BUILD_SP_DPU)
             Examples/Monocular/ip_cam_superpoint.cpp)
     target_link_libraries(ip_cam_superpoint ${PROJECT_NAME} -lvart-util -lvart-runner -lglog)
     
+    add_executable(webcam_superpoint
+            Examples/Monocular/webcam_superpoint.cpp)
+    target_link_libraries(webcam_superpoint ${PROJECT_NAME} -lvart-util -lvart-runner -lglog)
+    
     message(STATUS "Building SuperPoint DPU real-time feature extraction executable")
 endif()
 
